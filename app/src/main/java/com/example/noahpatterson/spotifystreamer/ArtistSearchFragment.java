@@ -1,26 +1,33 @@
 package com.example.noahpatterson.spotifystreamer;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
+import kaaes.spotify.webapi.android.SpotifyApi;
+import kaaes.spotify.webapi.android.SpotifyService;
+import kaaes.spotify.webapi.android.models.Artist;
+import kaaes.spotify.webapi.android.models.ArtistsPager;
 
-
-/**
- * A placeholder fragment containing a simple view.
- */
 public class ArtistSearchFragment extends Fragment {
+
+    private ArtistsAdapter adapter;
 
     public ArtistSearchFragment() {
     }
@@ -32,13 +39,12 @@ public class ArtistSearchFragment extends Fragment {
         final View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
 
         ArrayList<Artist> arrayOfArtists = new ArrayList<Artist>();
-        ArtistsAdapter adapter = new ArtistsAdapter(getActivity(), arrayOfArtists);
+        adapter = new ArtistsAdapter(getActivity(), arrayOfArtists);
 
         final ListView artist_search_list_view = (ListView) fragmentView.findViewById(R.id.listview_artist_search);
         artist_search_list_view.setAdapter(adapter);
 
-        Artist testArtist = new Artist("Noah", "https://i.scdn.co/image/18141db33353a7b84c311b7068e29ea53fad2326");
-        adapter.add(testArtist);
+        searchForArtist(fragmentView);
 
         return fragmentView;
     }
@@ -60,10 +66,52 @@ public class ArtistSearchFragment extends Fragment {
             ImageView artistImage = (ImageView) convertView.findViewById(R.id.artist_search_artist_image);
             TextView artistName = (TextView) convertView.findViewById(R.id.artist_search_artist_name);
 
-            Picasso.with(convertView.getContext()).load(artist.artistImageURL).into(artistImage);
+            if (artist.images.isEmpty()) {
+                Picasso.with(convertView.getContext()).load(R.drawable.no_artist).into(artistImage);
+            } else {
+                Picasso.with(convertView.getContext()).load(artist.images.get(2).url).into(artistImage);
+            }
+
             artistName.setText(artist.name);
 
             return convertView;
         }
     }
+
+    private void searchForArtist(View view) {
+        EditText inputText = (EditText) view.findViewById(R.id.search_input);
+        inputText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH){
+                    String artistToSearch = (String) v.getText().toString();
+                    new FetchArtistsTask().execute(artistToSearch);
+                  return false;
+                }
+                return false;
+            }
+        });
+    }
+
+    private class FetchArtistsTask extends AsyncTask<String, Void, ArrayList<Artist>> {
+        @Override
+        protected ArrayList<Artist> doInBackground(String... params) {
+            SpotifyApi api = new SpotifyApi();
+            SpotifyService spotify = api.getService();
+            ArtistsPager results = spotify.searchArtists(params[0]);
+            return (ArrayList<Artist>) results.artists.items;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<Artist> artists) {
+            if (artists != null && artists.isEmpty() == false) {
+                adapter.clear();
+                adapter.addAll(artists);
+            } else {
+                adapter.clear();
+                Toast.makeText(getActivity().getApplicationContext(),"Sorry no artists found.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
 }
