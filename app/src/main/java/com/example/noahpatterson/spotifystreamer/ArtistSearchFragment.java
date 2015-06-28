@@ -1,6 +1,7 @@
 package com.example.noahpatterson.spotifystreamer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -45,6 +47,18 @@ public class ArtistSearchFragment extends Fragment {
         artist_search_list_view.setAdapter(adapter);
 
         searchForArtist(fragmentView);
+
+        artist_search_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Artist artist = (Artist) artist_search_list_view.getItemAtPosition(position);
+                Intent intent = new Intent(getActivity(), TopTracks.class);
+
+                intent.putExtra(Intent.EXTRA_TEXT, artist.id );
+
+                startActivity(intent);
+            }
+        });
 
         return fragmentView;
     }

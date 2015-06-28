@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:id="@+id/list_item_top_tracks_layout"
+    android:padding="16dp"
+    >
+
+    <ImageView
+        android:layout_width="200px"
+        android:layout_height="200px"
+        android:id="@+id/top_tracks_album_image"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_launcher"
+
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_gravity="center_vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/top_tracks_song_name"
+            tools:text="Song Name"
+            android:layout_marginBottom="4dp"
+            android:textSize="20sp"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/top_tracks_album_name"
+            tools:text="Album Name"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            />
+
+    </LinearLayout>
+
+
+
+
+
+</LinearLayout>
