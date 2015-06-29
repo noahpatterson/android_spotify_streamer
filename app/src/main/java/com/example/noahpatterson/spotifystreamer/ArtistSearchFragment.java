@@ -67,6 +67,7 @@ public class ArtistSearchFragment extends Fragment {
 
                 intent.putExtra("artist_id", artist.id );
                 intent.putExtra("artist_name", artist.name);
+                intent.putExtra("artist_large_image", artist.large_image);
 
                 startActivity(intent);
             }
@@ -147,8 +148,13 @@ public class ArtistSearchFragment extends Fragment {
                         small_image = null;
                         large_image = null;
                     } else {
-                        small_image = artist.images.get(2).url;
-                        large_image = artist.images.get(0).url;
+                        if ( artist.images.size() >= 3) {
+                            small_image = artist.images.get(2).url;
+                            large_image = artist.images.get(0).url;
+                        } else {
+                            small_image = artist.images.get(0).url;
+                            large_image = small_image;
+                        }
                     }
                     parcelableArtists.add(new ParcelableArtist(id,name, small_image, large_image));
                 }

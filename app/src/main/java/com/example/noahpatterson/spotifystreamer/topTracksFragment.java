@@ -33,6 +33,7 @@ public class topTracksFragment extends Fragment {
     private TracksAdapter adapter;
     private ArrayList<Track> mArrayOfTracks;
     private Intent artistIntent;
+    private String artistName;
 
     public topTracksFragment() {
     }
@@ -43,7 +44,7 @@ public class topTracksFragment extends Fragment {
         setRetainInstance(true);
 
         artistIntent = getActivity().getIntent();
-        String artistName = artistIntent.getStringExtra("artist_name");
+        artistName = artistIntent.getStringExtra("artist_name");
 
         android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
         actionBar.setTitle(artistName + "'s Top Tracks");
@@ -53,6 +54,13 @@ public class topTracksFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
+
+        TextView artist_hero_name = (TextView) fragmentView.findViewById(R.id.artist_hero_name);
+        artist_hero_name.setText(artistName);
+
+        ImageView artist_hero_image = (ImageView) fragmentView.findViewById(R.id.artist_hero_image);
+        String large_image_url = artistIntent.getStringExtra("artist_large_image");
+        Picasso.with(fragmentView.getContext()).load(large_image_url).into(artist_hero_image);
 
         String artistID = artistIntent.getStringExtra("artist_id");
 

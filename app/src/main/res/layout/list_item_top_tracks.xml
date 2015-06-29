@@ -1,51 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/list_item_top_tracks_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:id="@+id/list_item_top_tracks_layout"
-    android:padding="16dp"
-    >
+    android:padding="16dp">
 
     <ImageView
+        android:id="@+id/top_tracks_album_image"
         android:layout_width="200px"
         android:layout_height="200px"
-        android:id="@+id/top_tracks_album_image"
-        android:scaleType="centerCrop"
+        android:scaleType="centerInside"
         android:src="@drawable/ic_launcher"
-
         />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:layout_gravity="center_vertical">
+        android:padding="16dp">
 
         <TextView
+            android:id="@+id/top_tracks_song_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/top_tracks_song_name"
-            tools:text="Song Name"
             android:layout_marginBottom="4dp"
             android:textSize="20sp"
-            />
+            tools:text="Song Name" />
 
         <TextView
+            android:id="@+id/top_tracks_album_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/top_tracks_album_name"
-            tools:text="Album Name"
             android:textSize="16sp"
             android:textStyle="bold"
-            />
+            tools:text="Album Name" />
 
     </LinearLayout>
-
-
-
-
-
 </LinearLayout>
+
+
