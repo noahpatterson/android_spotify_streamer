@@ -108,10 +108,12 @@ public class ArtistSearchFragment extends Fragment {
         inputText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH){
-                    String artistToSearch = v.getText().toString();
+                String artistToSearch = v.getText().toString();
+                if (!artistToSearch.isEmpty() && actionId == EditorInfo.IME_ACTION_SEARCH){
                     new FetchArtistsTask().execute(artistToSearch);
-                  return false;
+                    return false;
+                } else {
+                    Toast.makeText(getActivity().getApplicationContext(),"You must type an artists name.", Toast.LENGTH_LONG).show();
                 }
                 return false;
             }
@@ -152,7 +154,7 @@ public class ArtistSearchFragment extends Fragment {
                 mArtistArrayList = parcelableArtists;
             } else {
                 adapter.clear();
-                Toast.makeText(getActivity().getApplicationContext(),"Sorry no artists found.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(),"Sorry no artists found.", Toast.LENGTH_LONG).show();
             }
         }
     }
