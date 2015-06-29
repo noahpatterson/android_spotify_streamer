@@ -43,11 +43,6 @@ public class topTracksFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
 
-        artistIntent = getActivity().getIntent();
-        artistName = artistIntent.getStringExtra("artist_name");
-
-        android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
-        actionBar.setTitle(artistName + "'s Top Tracks");
     }
 
     @Override
@@ -55,6 +50,12 @@ public class topTracksFragment extends Fragment {
                              Bundle savedInstanceState) {
         final View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
 
+        artistIntent = getActivity().getIntent();
+        artistName = artistIntent.getStringExtra("artist_name");
+
+        android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
+        actionBar.setTitle(artistName + "'s Top Tracks");
+        
         TextView artist_hero_name = (TextView) fragmentView.findViewById(R.id.artist_hero_name);
         artist_hero_name.setText(artistName);
 
