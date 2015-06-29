@@ -46,7 +46,7 @@ public class topTracksFragment extends Fragment {
         String artistName = artistIntent.getStringExtra("artist_name");
 
         android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
-        actionBar.setSubtitle(artistName);
+        actionBar.setTitle(artistName + "'s Top Tracks");
     }
 
     @Override
