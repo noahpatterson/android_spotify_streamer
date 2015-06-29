@@ -24,7 +24,8 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ArtistSearchFragment">
+        tools:context=".ArtistSearchFragment"
+        android:id="@+id/search_frame_layout">
 
         <ListView
             android:layout_width="match_parent"

@@ -30,17 +30,15 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
 public class ArtistSearchFragment extends Fragment {
 
     private ArtistsAdapter adapter;
-    private ArrayList<ParcelableArtist> artistArrayList;
+    private ArrayList<ParcelableArtist> mArtistArrayList;
 
     public ArtistSearchFragment() {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList("search_results", artistArrayList);
-        EditText inputText = (EditText) getActivity().findViewById(R.id.search_input);
-        outState.putString("search_string", inputText.getText().toString());
-        super.onSaveInstanceState(outState);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
     }
 
     @Override
@@ -48,22 +46,11 @@ public class ArtistSearchFragment extends Fragment {
                              Bundle savedInstanceState) {
         final View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        if (savedInstanceState != null) {
-            // restore search array
-            artistArrayList = savedInstanceState.getParcelableArrayList("search_results");
-            adapter = new ArtistsAdapter(getActivity(), artistArrayList);
-//
-//            adapter.clear();
-//            adapter.addAll(artistArrayList);
-
-            // restore search text
-            String searchString = savedInstanceState.getString("search_string");
-            EditText inputText = (EditText) fragmentView.findViewById(R.id.search_input);
-            inputText.setText(searchString);
-        } else {
-            ArrayList<ParcelableArtist> arrayOfArtists = new ArrayList<ParcelableArtist>();
-            adapter = new ArtistsAdapter(getActivity(), arrayOfArtists);
+        if ( mArtistArrayList == null || mArtistArrayList.isEmpty()) {
+            mArtistArrayList = new ArrayList<ParcelableArtist>();
         }
+
+        adapter = new ArtistsAdapter(getActivity(), mArtistArrayList);
 
         final ListView artist_search_list_view = (ListView) fragmentView.findViewById(R.id.listview_artist_search);
         artist_search_list_view.setAdapter(adapter);
@@ -162,7 +149,7 @@ public class ArtistSearchFragment extends Fragment {
 
                 adapter.clear();
                 adapter.addAll(parcelableArtists);
-                artistArrayList = parcelableArtists;
+                mArtistArrayList = parcelableArtists;
             } else {
                 adapter.clear();
                 Toast.makeText(getActivity().getApplicationContext(),"Sorry no artists found.", Toast.LENGTH_SHORT).show();
