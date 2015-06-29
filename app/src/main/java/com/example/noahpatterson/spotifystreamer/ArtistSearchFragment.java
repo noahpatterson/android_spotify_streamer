@@ -65,7 +65,8 @@ public class ArtistSearchFragment extends Fragment {
                 ParcelableArtist artist = (ParcelableArtist) artist_search_list_view.getItemAtPosition(position);
                 Intent intent = new Intent(getActivity(), TopTracks.class);
 
-                intent.putExtra(Intent.EXTRA_TEXT, artist.id );
+                intent.putExtra("artist_id", artist.id );
+                intent.putExtra("artist_name", artist.name);
 
                 startActivity(intent);
             }

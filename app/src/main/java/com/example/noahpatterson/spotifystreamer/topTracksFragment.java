@@ -32,6 +32,7 @@ public class topTracksFragment extends Fragment {
 
     private TracksAdapter adapter;
     private ArrayList<Track> mArrayOfTracks;
+    private Intent artistIntent;
 
     public topTracksFragment() {
     }
@@ -40,16 +41,20 @@ public class topTracksFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-    }
 
+        artistIntent = getActivity().getIntent();
+        String artistName = artistIntent.getStringExtra("artist_name");
+
+        android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
+        actionBar.setSubtitle(artistName);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
 
-        Intent artistIntent = getActivity().getIntent();
-        String artistID = artistIntent.getStringExtra(Intent.EXTRA_TEXT);
+        String artistID = artistIntent.getStringExtra("artist_id");
 
         if ( mArrayOfTracks == null || mArrayOfTracks.isEmpty()) {
             mArrayOfTracks = new ArrayList<Track>();
