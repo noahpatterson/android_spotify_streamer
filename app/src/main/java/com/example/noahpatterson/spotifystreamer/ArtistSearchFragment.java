@@ -109,13 +109,16 @@ public class ArtistSearchFragment extends Fragment {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String artistToSearch = v.getText().toString();
-                if (!artistToSearch.isEmpty() && actionId == EditorInfo.IME_ACTION_SEARCH){
-                    new FetchArtistsTask().execute(artistToSearch);
-                    return false;
-                } else {
-                    Toast.makeText(getActivity().getApplicationContext(),"You must type an artists name.", Toast.LENGTH_LONG).show();
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    if (!artistToSearch.isEmpty()) {
+                        new FetchArtistsTask().execute(artistToSearch);
+                        return true;
+                    } else {
+                        Toast.makeText(getActivity().getApplicationContext(),"You must type an artists name.", Toast.LENGTH_LONG).show();
+                        return true;
+                    }
                 }
-                return false;
+                return true;
             }
         });
     }

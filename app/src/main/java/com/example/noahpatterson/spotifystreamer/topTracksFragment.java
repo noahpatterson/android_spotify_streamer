@@ -31,9 +31,17 @@ import kaaes.spotify.webapi.android.models.Track;
 public class topTracksFragment extends Fragment {
 
     private TracksAdapter adapter;
+    private ArrayList<Track> mArrayOfTracks;
 
     public topTracksFragment() {
     }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -43,13 +51,16 @@ public class topTracksFragment extends Fragment {
         Intent artistIntent = getActivity().getIntent();
         String artistID = artistIntent.getStringExtra(Intent.EXTRA_TEXT);
 
-        ArrayList<Track> arrayOfTracks = new ArrayList<Track>();
-        adapter = new TracksAdapter(getActivity(), arrayOfTracks);
+        if ( mArrayOfTracks == null || mArrayOfTracks.isEmpty()) {
+            mArrayOfTracks = new ArrayList<Track>();
+            new FetchTopTracksTask().execute(artistID);
+        }
+
+        adapter = new TracksAdapter(getActivity(), mArrayOfTracks);
 
         final ListView top_tracks_list_view = (ListView) fragmentView.findViewById(R.id.listview_top_tracks);
         top_tracks_list_view.setAdapter(adapter);
 
-        new FetchTopTracksTask().execute(artistID);
         return fragmentView;
     }
 
@@ -100,6 +111,7 @@ public class topTracksFragment extends Fragment {
             if (tracks != null && tracks.isEmpty() == false) {
                 adapter.clear();
                 adapter.addAll(tracks);
+                mArrayOfTracks = (ArrayList<Track>) tracks;
             } else {
                 adapter.clear();
                 Toast.makeText(getActivity().getApplicationContext(), "Sorry no tracks found.", Toast.LENGTH_SHORT).show();
