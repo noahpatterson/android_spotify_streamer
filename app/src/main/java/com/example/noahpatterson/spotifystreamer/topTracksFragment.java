@@ -139,12 +139,11 @@ public class topTracksFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<Track> tracks) {
+            adapter.clear();
             if (tracks != null && !tracks.isEmpty()) {
-                adapter.clear();
                 adapter.addAll(tracks);
                 mArrayOfTracks = (ArrayList<Track>) tracks;
             } else {
-                adapter.clear();
                 Toast.makeText(getActivity().getApplicationContext(), R.string.no_tracks_found, Toast.LENGTH_SHORT).show();
             }
         }

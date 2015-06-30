@@ -21,11 +21,13 @@ import android.widget.Toast;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+import kaaes.spotify.webapi.android.models.Image;
 
 public class ArtistSearchFragment extends Fragment {
 
@@ -113,15 +115,11 @@ public class ArtistSearchFragment extends Fragment {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String artistToSearch = v.getText().toString();
-                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                    if (!artistToSearch.isEmpty()) {
-                        new FetchArtistsTask().execute(artistToSearch);
-                        return true;
-                    } else {
-                        Toast.makeText(getActivity().getApplicationContext(), R.string.blank_artist_name, Toast.LENGTH_LONG).show();
-                        return true;
-                    }
+                if (actionId == EditorInfo.IME_ACTION_SEARCH && !artistToSearch.isEmpty()) {
+                    new FetchArtistsTask().execute(artistToSearch);
+                    return true;
                 }
+                Toast.makeText(getActivity().getApplicationContext(), R.string.blank_artist_name, Toast.LENGTH_LONG).show();
                 return true;
             }
         });
@@ -138,35 +136,37 @@ public class ArtistSearchFragment extends Fragment {
 
         @Override
         protected void onPostExecute(ArrayList<Artist> artists) {
+            adapter.clear();
             if (artists != null && !artists.isEmpty()) {
                 ArrayList<ParcelableArtist> parcelableArtists = new ArrayList<>();
-                for (Artist artist : artists) {
-                    String name = artist.name;
-                    String id = artist.id;
-                    String small_image;
-                    String large_image;
 
-                    if (artist.images.isEmpty()) {
-                        small_image = null;
-                        large_image = null;
-                    } else {
-                        if ( artist.images.size() >= 3) {
-                            small_image = artist.images.get(2).url;
-                            large_image = artist.images.get(0).url;
-                        } else {
-                            small_image = artist.images.get(0).url;
-                            large_image = small_image;
-                        }
-                    }
-                    parcelableArtists.add(new ParcelableArtist(id,name, small_image, large_image));
-                }
+                populateParcelableArtistList(artists, parcelableArtists);
 
-                adapter.clear();
                 adapter.addAll(parcelableArtists);
                 mArtistArrayList = parcelableArtists;
             } else {
-                adapter.clear();
                 Toast.makeText(getActivity().getApplicationContext(), R.string.no_artists_found, Toast.LENGTH_LONG).show();
+            }
+        }
+
+        private void populateParcelableArtistList(ArrayList<Artist> artists, ArrayList<ParcelableArtist> parcelableArtists) {
+            for (Artist artist : artists) {
+                String small_image = null;
+                String large_image = null;
+
+                // is it cheaper in java to declare these variables or do the object traversal multiple times?
+                final List<Image> images = artist.images;
+                final int imageListSize = images.size();
+
+                if (imageListSize >= 3) {
+                    small_image = images.get(2).url;
+                    large_image = images.get(0).url;
+                }
+                if (imageListSize > 0 && imageListSize < 3) {
+                    small_image = images.get(0).url;
+                    large_image = small_image;
+                }
+                parcelableArtists.add(new ParcelableArtist(artist.id, artist.name, small_image, large_image));
             }
         }
     }
