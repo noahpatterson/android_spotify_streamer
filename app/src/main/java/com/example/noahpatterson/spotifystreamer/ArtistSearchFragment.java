@@ -44,20 +44,12 @@ public class ArtistSearchFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        final View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
-
-        if ( mArtistArrayList == null || mArtistArrayList.isEmpty()) {
-            mArtistArrayList = new ArrayList<ParcelableArtist>();
-        }
-
-        adapter = new ArtistsAdapter(getActivity(), mArtistArrayList);
-
+        View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
         final ListView artist_search_list_view = (ListView) fragmentView.findViewById(R.id.listview_artist_search);
-        artist_search_list_view.setAdapter(adapter);
 
+        bindAdapterToListView(artist_search_list_view);
 
         searchForArtist(fragmentView);
-
 
         artist_search_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -74,6 +66,16 @@ public class ArtistSearchFragment extends Fragment {
         });
 
         return fragmentView;
+    }
+
+    private void bindAdapterToListView(ListView artist_search_list_view) {
+        if ( mArtistArrayList == null || mArtistArrayList.isEmpty()) {
+            mArtistArrayList = new ArrayList<>();
+        }
+
+        adapter = new ArtistsAdapter(getActivity(), mArtistArrayList);
+
+        artist_search_list_view.setAdapter(adapter);
     }
 
     public class ArtistsAdapter extends ArrayAdapter<ParcelableArtist> {
@@ -116,7 +118,7 @@ public class ArtistSearchFragment extends Fragment {
                         new FetchArtistsTask().execute(artistToSearch);
                         return true;
                     } else {
-                        Toast.makeText(getActivity().getApplicationContext(),"You must type an artists name.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getActivity().getApplicationContext(), R.string.blank_artist_name, Toast.LENGTH_LONG).show();
                         return true;
                     }
                 }
@@ -137,7 +139,7 @@ public class ArtistSearchFragment extends Fragment {
         @Override
         protected void onPostExecute(ArrayList<Artist> artists) {
             if (artists != null && !artists.isEmpty()) {
-                ArrayList<ParcelableArtist> parcelableArtists = new ArrayList<ParcelableArtist>();
+                ArrayList<ParcelableArtist> parcelableArtists = new ArrayList<>();
                 for (Artist artist : artists) {
                     String name = artist.name;
                     String id = artist.id;
@@ -164,7 +166,7 @@ public class ArtistSearchFragment extends Fragment {
                 mArtistArrayList = parcelableArtists;
             } else {
                 adapter.clear();
-                Toast.makeText(getActivity().getApplicationContext(),"Sorry no artists found.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity().getApplicationContext(), R.string.no_artists_found, Toast.LENGTH_LONG).show();
             }
         }
     }

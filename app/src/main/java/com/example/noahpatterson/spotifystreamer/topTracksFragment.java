@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,9 +32,8 @@ import kaaes.spotify.webapi.android.models.Track;
 public class topTracksFragment extends Fragment {
 
     private TracksAdapter adapter;
+    // do member variable have special lifecycle in java or is this just convention?
     private ArrayList<Track> mArrayOfTracks;
-    private Intent artistIntent;
-    private String artistName;
 
     public topTracksFragment() {
     }
@@ -42,40 +42,57 @@ public class topTracksFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        final View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
-
-        artistIntent = getActivity().getIntent();
-        artistName = artistIntent.getStringExtra("artist_name");
-
-        android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
-        actionBar.setTitle(artistName + "'s Top Tracks");
-        
-        TextView artist_hero_name = (TextView) fragmentView.findViewById(R.id.artist_hero_name);
-        artist_hero_name.setText(artistName);
-
-        ImageView artist_hero_image = (ImageView) fragmentView.findViewById(R.id.artist_hero_image);
-        String large_image_url = artistIntent.getStringExtra("artist_large_image");
-        Picasso.with(fragmentView.getContext()).load(large_image_url).into(artist_hero_image);
-
+        View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
+        Intent artistIntent = getActivity().getIntent();
+        String artistName = artistIntent.getStringExtra("artist_name");
         String artistID = artistIntent.getStringExtra("artist_id");
 
+        addArtistNameToActionBar(artistName);
+
+        createArtistHeroLayout(fragmentView, artistIntent, artistName);
+
+        bindAdapterToListView(fragmentView, artistID);
+
+        return fragmentView;
+    }
+
+    private void bindAdapterToListView(View fragmentView, String artistID) {
         if ( mArrayOfTracks == null || mArrayOfTracks.isEmpty()) {
-            mArrayOfTracks = new ArrayList<Track>();
+            mArrayOfTracks = new ArrayList<>();
             new FetchTopTracksTask().execute(artistID);
         }
 
         adapter = new TracksAdapter(getActivity(), mArrayOfTracks);
 
-        final ListView top_tracks_list_view = (ListView) fragmentView.findViewById(R.id.listview_top_tracks);
+        ListView top_tracks_list_view = (ListView) fragmentView.findViewById(R.id.listview_top_tracks);
         top_tracks_list_view.setAdapter(adapter);
+    }
 
-        return fragmentView;
+    private void createArtistHeroLayout(View fragmentView, Intent artistIntent, String artistName) {
+        TextView artist_hero_name = (TextView) fragmentView.findViewById(R.id.artist_hero_name);
+        artist_hero_name.setText(artistName);
+
+        ImageView artist_hero_image = (ImageView) fragmentView.findViewById(R.id.artist_hero_image);
+        String large_image_url = artistIntent.getStringExtra("artist_large_image");
+
+        if (TextUtils.isEmpty(large_image_url)) {
+            Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(artist_hero_image);
+        } else {
+            Picasso.with(fragmentView.getContext()).load(large_image_url).into(artist_hero_image);
+        }
+    }
+
+    private void addArtistNameToActionBar(String artistName) {
+        android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
+
+        if (actionBar != null) {
+            actionBar.setTitle(artistName + "'s Top Tracks");
+        }
     }
 
     public class TracksAdapter extends ArrayAdapter<Track> {
@@ -115,20 +132,20 @@ public class topTracksFragment extends Fragment {
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
 
-            Map<String,Object> queryCountry = new HashMap<String, Object>();
+            Map<String,Object> queryCountry = new HashMap<>();
             queryCountry.put("country","US");
             return spotify.getArtistTopTrack(params[0], queryCountry).tracks;
         }
 
         @Override
         protected void onPostExecute(List<Track> tracks) {
-            if (tracks != null && tracks.isEmpty() == false) {
+            if (tracks != null && !tracks.isEmpty()) {
                 adapter.clear();
                 adapter.addAll(tracks);
                 mArrayOfTracks = (ArrayList<Track>) tracks;
             } else {
                 adapter.clear();
-                Toast.makeText(getActivity().getApplicationContext(), "Sorry no tracks found.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(), R.string.no_tracks_found, Toast.LENGTH_SHORT).show();
             }
         }
     }

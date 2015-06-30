@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Spotify Streamer</string>
     <string name="title_activity_top_tracks">Artist\'s Top Tracks</string>
+    <string name="no_artists_found">Sorry no artists found.</string>
+    <string name="blank_artist_name">You must type an artists name.</string>
+    <string name="no_tracks_found">Sorry no tracks found.</string>
 </resources>
