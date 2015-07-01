@@ -28,6 +28,7 @@ import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
 import kaaes.spotify.webapi.android.models.Image;
+import retrofit.RetrofitError;
 
 public class ArtistSearchFragment extends Fragment {
 
@@ -40,7 +41,18 @@ public class ArtistSearchFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRetainInstance(true);
+//        setRetainInstance(true);
+        if (savedInstanceState != null) {
+            mArtistArrayList = savedInstanceState.getParcelableArrayList("saved_artist_search");
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        if (mArtistArrayList != null) {
+            outState.putParcelableArrayList("saved_artist_search", mArtistArrayList);
+        }
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -126,18 +138,28 @@ public class ArtistSearchFragment extends Fragment {
     }
 
     private class FetchArtistsTask extends AsyncTask<String, Void, ArrayList<Artist>> {
+        RetrofitError artistSearchError;
         @Override
         protected ArrayList<Artist> doInBackground(String... params) {
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            ArtistsPager results = spotify.searchArtists(params[0]);
-            return (ArrayList<Artist>) results.artists.items;
+
+            try {
+                ArtistsPager results = spotify.searchArtists(params[0]);
+                return (ArrayList<Artist>) results.artists.items;
+            } catch (RetrofitError e) {
+                artistSearchError = e;
+                List<Artist> emptyArtistList = new ArrayList<Artist>();
+                return (ArrayList<Artist>) emptyArtistList;
+            }
         }
 
         @Override
         protected void onPostExecute(ArrayList<Artist> artists) {
             adapter.clear();
-            if (artists != null && !artists.isEmpty()) {
+            if (artistSearchError != null) {
+                Toast.makeText(getActivity().getApplicationContext(), R.string.no_internet, Toast.LENGTH_LONG).show();
+            } else if (artists != null && !artists.isEmpty()) {
                 ArrayList<ParcelableArtist> parcelableArtists = new ArrayList<>();
 
                 populateParcelableArtistList(artists, parcelableArtists);
@@ -147,6 +169,7 @@ public class ArtistSearchFragment extends Fragment {
             } else {
                 Toast.makeText(getActivity().getApplicationContext(), R.string.no_artists_found, Toast.LENGTH_LONG).show();
             }
+
         }
 
         private void populateParcelableArtistList(ArrayList<Artist> artists, ArrayList<ParcelableArtist> parcelableArtists) {

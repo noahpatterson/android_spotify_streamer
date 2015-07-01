@@ -18,24 +18,24 @@ import android.widget.Toast;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Track;
+import retrofit.RetrofitError;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class topTracksFragment extends Fragment {
+public class TopTracksFragment extends Fragment {
 
     private TracksAdapter adapter;
     // do member variable have special lifecycle in java or is this just convention?
-    private ArrayList<Track> mArrayOfTracks;
+    private ArrayList<ParcelableTrack> mArrayOfTracks;
 
-    public topTracksFragment() {
+    public TopTracksFragment() {
     }
 
     @Override
@@ -95,15 +95,15 @@ public class topTracksFragment extends Fragment {
         }
     }
 
-    public class TracksAdapter extends ArrayAdapter<Track> {
+    public class TracksAdapter extends ArrayAdapter<ParcelableTrack> {
 
-        public TracksAdapter(Context context, ArrayList<Track> tracks){
+        public TracksAdapter(Context context, ArrayList<ParcelableTrack> tracks){
             super(context,0,tracks);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            Track track = getItem(position);
+            ParcelableTrack track = getItem(position);
 
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_top_tracks, parent, false);
@@ -113,39 +113,57 @@ public class topTracksFragment extends Fragment {
             TextView trackName = (TextView) convertView.findViewById(R.id.top_tracks_song_name);
             TextView albumName = (TextView) convertView.findViewById(R.id.top_tracks_album_name);
 
-            if (track.album.images.isEmpty()) {
+            if (track.albumImage == null) {
                 Picasso.with(convertView.getContext()).load(R.drawable.noalbum).into(albumImage);
             } else {
-                Picasso.with(convertView.getContext()).load(track.album.images.get(1).url).into(albumImage);
+                Picasso.with(convertView.getContext()).load(track.albumImage).into(albumImage);
             }
 
             trackName.setText(track.name);
-            albumName.setText(track.album.name);
+            albumName.setText(track.albumName);
 
             return convertView;
         }
     }
 
     private class FetchTopTracksTask extends AsyncTask<String, Void, List<Track>> {
+        RetrofitError topTracksError;
         @Override
         protected List<Track> doInBackground(String... params) {
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
 
-            Map<String,Object> queryCountry = new HashMap<>();
-            queryCountry.put("country","US");
-            return spotify.getArtistTopTrack(params[0], queryCountry).tracks;
-        }
+            try {
+                Map<String,Object> queryCountry = new android.support.v4.util.ArrayMap<>(1);
+                queryCountry.put("country","US");
+                return spotify.getArtistTopTrack(params[0], queryCountry).tracks;
+            } catch (RetrofitError e) {
+                topTracksError = e;
+                return new ArrayList<Track>();
+                }
+            }
 
         @Override
         protected void onPostExecute(List<Track> tracks) {
             adapter.clear();
-            if (tracks != null && !tracks.isEmpty()) {
-                adapter.addAll(tracks);
-                mArrayOfTracks = (ArrayList<Track>) tracks;
+            if (topTracksError != null) {
+                Toast.makeText(getActivity().getApplicationContext(), R.string.no_internet, Toast.LENGTH_LONG).show();
+            } else if (tracks != null && !tracks.isEmpty()) {
+                ArrayList<ParcelableTrack> parcelableTracks = populateParcelableTrackList(tracks);
+                adapter.addAll(parcelableTracks);
+                mArrayOfTracks = parcelableTracks;
             } else {
                 Toast.makeText(getActivity().getApplicationContext(), R.string.no_tracks_found, Toast.LENGTH_SHORT).show();
             }
+        }
+
+        private ArrayList<ParcelableTrack> populateParcelableTrackList(List<Track> tracks) {
+            ArrayList<ParcelableTrack> parcelableTracks = new ArrayList<>();
+            for (Track track : tracks ) {
+                String albumImage = track.album.images.isEmpty() ? null : track.album.images.get(0).url;
+                parcelableTracks.add(new ParcelableTrack(track.name, track.album.name, albumImage));
+            }
+            return parcelableTracks;
         }
     }
 }
