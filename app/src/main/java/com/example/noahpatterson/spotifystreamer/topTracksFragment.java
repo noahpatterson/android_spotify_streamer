@@ -41,7 +41,18 @@ public class TopTracksFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRetainInstance(true);
+//        setRetainInstance(true);
+        if (savedInstanceState != null) {
+            mArrayOfTracks = savedInstanceState.getParcelableArrayList("saved_top_tracks");
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        if (mArrayOfTracks != null) {
+            outState.putParcelableArrayList("saved_top_tracks", mArrayOfTracks);
+        }
+        super.onSaveInstanceState(outState);
     }
 
     @Override

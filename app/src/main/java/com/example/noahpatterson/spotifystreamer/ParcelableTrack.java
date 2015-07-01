@@ -6,7 +6,7 @@ import android.os.Parcelable;
 /**
  * Created by noahpatterson on 7/1/15.
  */
-public class ParcelableTrack {
+public class ParcelableTrack implements Parcelable{
     public String name;
     public String albumName;
     public String albumImage;
