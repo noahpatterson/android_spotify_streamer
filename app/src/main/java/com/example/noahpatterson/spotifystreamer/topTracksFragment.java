@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -23,6 +24,7 @@ import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
+import kaaes.spotify.webapi.android.models.ArtistSimple;
 import kaaes.spotify.webapi.android.models.Track;
 import retrofit.RetrofitError;
 
@@ -82,6 +84,25 @@ public class TopTracksFragment extends Fragment {
 
         ListView top_tracks_list_view = (ListView) fragmentView.findViewById(R.id.listview_top_tracks);
         top_tracks_list_view.setAdapter(adapter);
+
+        // create list view item click listener
+        top_tracks_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ParcelableTrack parcelableTrack = (ParcelableTrack) parent.getItemAtPosition(position);
+                Intent playerIntent = new Intent(getActivity(), PlayerActivity.class);
+
+//                playerIntent.putExtra("previewURL", parcelableTrack.previewURL);
+//                playerIntent.putExtra("artistName", parcelableTrack.artistNames);
+//                playerIntent.putExtra("albumName", parcelableTrack.albumName);
+//                playerIntent.putExtra("albumImage", parcelableTrack.albumImage);
+//                playerIntent.putExtra("trackName", parcelableTrack.name);
+//                playerIntent.putExtra("duration", 0);
+                playerIntent.putExtra("track", parcelableTrack);
+
+                startActivity(playerIntent);
+            }
+        });
     }
 
     private void createArtistHeroLayout(View fragmentView, Intent artistIntent, String artistName) {
@@ -172,7 +193,11 @@ public class TopTracksFragment extends Fragment {
             ArrayList<ParcelableTrack> parcelableTracks = new ArrayList<>();
             for (Track track : tracks ) {
                 String albumImage = track.album.images.isEmpty() ? null : track.album.images.get(0).url;
-                parcelableTracks.add(new ParcelableTrack(track.name, track.album.name, albumImage));
+                ArrayList<String> artistArrayList = new ArrayList<>();
+                for (ArtistSimple artist : track.artists) {
+                    artistArrayList.add(artist.name);
+                }
+                parcelableTracks.add(new ParcelableTrack(track.name, track.album.name, albumImage, track.preview_url, artistArrayList, track.duration_ms ));
             }
             return parcelableTracks;
         }
