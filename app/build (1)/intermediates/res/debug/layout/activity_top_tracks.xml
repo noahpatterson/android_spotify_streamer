@@ -1,0 +1,16 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+
+    >
+
+    <fragment
+        android:id="@+id/fragment"
+        android:name="com.example.noahpatterson.spotifystreamer.TopTracksFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:layout="@layout/fragment_top_tracks" />
+
+</LinearLayout><!-- From: file:/Users/webteam/Google%20Drive/AndroidProjects/SpotifyStreamer/app/src/main/res/layout/activity_top_tracks.xml -->
