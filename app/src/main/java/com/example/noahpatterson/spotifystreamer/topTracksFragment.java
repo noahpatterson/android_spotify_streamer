@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,7 +35,6 @@ import retrofit.RetrofitError;
 public class TopTracksFragment extends Fragment {
 
     private TracksAdapter adapter;
-    // do member variable have special lifecycle in java or is this just convention?
     private ArrayList<ParcelableTrack> mArrayOfTracks;
 
     public TopTracksFragment() {
@@ -42,6 +42,7 @@ public class TopTracksFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d("top_tracks_fragment", "in onCreate");
         super.onCreate(savedInstanceState);
 //        setRetainInstance(true);
         if (savedInstanceState != null) {
@@ -51,6 +52,7 @@ public class TopTracksFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        Log.d("top_tracks_fragment", "in onSaveInstanceState");
         if (mArrayOfTracks != null) {
             outState.putParcelableArrayList("saved_top_tracks", mArrayOfTracks);
         }
@@ -60,6 +62,7 @@ public class TopTracksFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d("top_tracks_fragment", "in onCreateView");
         View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
         Intent artistIntent = getActivity().getIntent();
         String artistName = artistIntent.getStringExtra("artist_name");
@@ -92,12 +95,6 @@ public class TopTracksFragment extends Fragment {
                 ParcelableTrack parcelableTrack = (ParcelableTrack) parent.getItemAtPosition(position);
                 Intent playerIntent = new Intent(getActivity(), PlayerActivity.class);
 
-//                playerIntent.putExtra("previewURL", parcelableTrack.previewURL);
-//                playerIntent.putExtra("artistName", parcelableTrack.artistNames);
-//                playerIntent.putExtra("albumName", parcelableTrack.albumName);
-//                playerIntent.putExtra("albumImage", parcelableTrack.albumImage);
-//                playerIntent.putExtra("trackName", parcelableTrack.name);
-//                playerIntent.putExtra("duration", 0);
                 playerIntent.putExtra("track", parcelableTrack);
 
                 startActivity(playerIntent);

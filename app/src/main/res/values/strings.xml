@@ -5,7 +5,7 @@
     <string name="blank_artist_name">You must type an artists name.</string>
     <string name="no_tracks_found">Sorry no tracks found.</string>
     <string name="no_internet">We could not connect to Spotify. Please check your internet connection.</string>
-    <string name="title_activity_player">PlayerActivity</string>
+    <string name="title_activity_player">Track Player</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 </resources>
