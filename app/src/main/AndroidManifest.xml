@@ -38,6 +38,16 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.noahpatterson.spotifystreamer.TopTracks" />
         </activity>
+
+        <service
+            android:name=".service.PlayTrackService"
+            android:exported="false" >
+        </service>
+        <service
+            android:name=".service.MyService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>

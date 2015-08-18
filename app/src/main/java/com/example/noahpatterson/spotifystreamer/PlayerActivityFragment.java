@@ -1,14 +1,19 @@
 package com.example.noahpatterson.spotifystreamer;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.noahpatterson.spotifystreamer.service.MyService;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -19,17 +24,29 @@ import java.util.Date;
  */
 public class PlayerActivityFragment extends Fragment {
 
+    private ParcelableTrack parcelableTrack = null;
+    private Boolean playing = false;
+
     public PlayerActivityFragment() {
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        //bind play button click listener
+
+
+        super.onCreate(savedInstanceState);
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
+        final View fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
 
         // populate player layout
         //pull track parceable
-        ParcelableTrack parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
+        parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
 
         //assign artistNames
         TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
@@ -60,6 +77,43 @@ public class PlayerActivityFragment extends Fragment {
         String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(parcelableTrack.duration));
         trackDurationTextView.setText(formattedDuration);
 
+        // set playbutton click listener
+        final ImageButton playButton = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playTrack(fragmentView.getContext(), playButton);
+            }
+        });
         return fragmentView;
+    }
+
+
+
+    public void playTrack(Context context, ImageButton button) {
+        if (playing == false) {
+            button.setImageResource(android.R.drawable.ic_media_pause);
+            Intent intent = new Intent(context, MyService.class);
+            intent.putExtra("previewUrl", parcelableTrack.previewURL);
+            intent.setAction("com.example.action.PLAY");
+            getActivity().startService(intent);
+//            PlayTrackService.start(context, parcelableTrack.previewURL);
+            playing = true;
+        } else {
+            button.setImageResource(android.R.drawable.ic_media_play);
+            Intent intent = new Intent(context, MyService.class);
+            intent.setAction("com.example.action.PAUSE");
+            getActivity().startService(intent);
+            playing = false;
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("PlayerActivityFragment", "in onDestroy");
+        Intent intent = new Intent(getActivity(), MyService.class);
+        intent.setAction("com.example.action.RESET");
+        getActivity().startService(intent);
+        super.onDestroy();
     }
 }
