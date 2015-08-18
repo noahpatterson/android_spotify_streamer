@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,15 +41,18 @@ public class ArtistSearchFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d("artist_search_fragment", "in onCreate");
         super.onCreate(savedInstanceState);
 //        setRetainInstance(true);
         if (savedInstanceState != null) {
+            Log.d("artist_search_fragment", "has savedInstanceState");
             mArtistArrayList = savedInstanceState.getParcelableArrayList("saved_artist_search");
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        Log.d("artist_search_fragment", "in onSaveInstanceState");
         if (mArtistArrayList != null) {
             outState.putParcelableArrayList("saved_artist_search", mArtistArrayList);
         }
@@ -58,6 +62,7 @@ public class ArtistSearchFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d("artist_search_fragment", "in onCreateView");
         View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
         final ListView artist_search_list_view = (ListView) fragmentView.findViewById(R.id.listview_artist_search);
 
@@ -83,6 +88,7 @@ public class ArtistSearchFragment extends Fragment {
     }
 
     private void bindAdapterToListView(ListView artist_search_list_view) {
+        Log.d("artist_search_fragment", "in bindAdapterToListView");
         if ( mArtistArrayList == null || mArtistArrayList.isEmpty()) {
             mArtistArrayList = new ArrayList<>();
         }
@@ -122,6 +128,7 @@ public class ArtistSearchFragment extends Fragment {
     }
 
     private void searchForArtist(View view) {
+        Log.d("artist_search_fragment", "in searchForArtist");
         EditText inputText = (EditText) view.findViewById(R.id.search_input);
         inputText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
