@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.noahpatterson.spotifystreamer.service.MyService;
@@ -68,14 +69,15 @@ public class PlayerActivityFragment extends Fragment {
             Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(albumImageImageView);
         }
 
-        //assign trackDuration
+        //assign trackDurationc
         TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
         trackNameTextView.setText(parcelableTrack.name);
 
         //assign trackDuration
-        TextView trackDurationTextView = (TextView) fragmentView.findViewById(R.id.playerTotalTrackTime);
-        String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(parcelableTrack.duration));
-        trackDurationTextView.setText(formattedDuration);
+        //TODO: this should really be the preview track length, possibly obtained from mediaPlayer
+//        TextView trackDurationTextView = (TextView) fragmentView.findViewById(R.id.playerTotalTrackTime);
+//        String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(parcelableTrack.duration));
+//        trackDurationTextView.setText(formattedDuration);
 
         // set playbutton click listener
         final ImageButton playButton = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
@@ -83,6 +85,32 @@ public class PlayerActivityFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 playTrack(fragmentView.getContext(), playButton);
+            }
+        });
+
+        //set seekBar change listener
+        //TODO: sync MediaPlayer position to seekbar
+        final SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+        seekBar.setMax(30 * 1000);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    Intent intent = new Intent(fragmentView.getContext(), MyService.class);
+                    intent.putExtra("seek_position", progress);
+                    intent.setAction("com.example.action.SEEK");
+                    getActivity().startService(intent);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
         return fragmentView;
@@ -111,9 +139,9 @@ public class PlayerActivityFragment extends Fragment {
     @Override
     public void onDestroy() {
         Log.d("PlayerActivityFragment", "in onDestroy");
-        Intent intent = new Intent(getActivity(), MyService.class);
-        intent.setAction("com.example.action.RESET");
-        getActivity().startService(intent);
+//        Intent intent = new Intent(getActivity(), MyService.class);
+//        intent.setAction("com.example.action.RESET");
+//        getActivity().startService(intent);
         super.onDestroy();
     }
 }
