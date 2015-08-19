@@ -20,6 +20,9 @@ import android.widget.TextView;
 import com.example.noahpatterson.spotifystreamer.service.PlayerService;
 import com.squareup.picasso.Picasso;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * A placeholder fragment containing a simple view.
  */
@@ -31,6 +34,8 @@ public class PlayerActivityFragment extends Fragment{
     private Intent playIntent;
     private boolean musicBound=false;
     private View fragmentView;
+    private Thread seekBarThread;
+    private int seekBarProgress = 0;
 
     public PlayerActivityFragment() {
     }
@@ -61,6 +66,7 @@ public class PlayerActivityFragment extends Fragment{
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("PlayerActivityFragment", "in onServiceConnected");
             PlayerService.PlayerBinder binder = (PlayerService.PlayerBinder) service;
             //get service
             musicSrv = binder.getService();
@@ -161,10 +167,10 @@ public class PlayerActivityFragment extends Fragment{
     }
 
 
-    public void playTrack(Context context, View fragmentView) {
+    public void playTrack(Context context, final View fragmentView) {
+        Log.d("PlayerActivityFragment", "in playTrack");
         if (musicSrv != null) {
             musicSrv.setFragmentView(fragmentView);
-            musicSrv.setFragmentActivity(getActivity());
         }
         ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
         if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
@@ -176,6 +182,7 @@ public class PlayerActivityFragment extends Fragment{
             playing = false;
 
         } else {
+
             button.setImageResource(android.R.drawable.ic_media_pause);
             Intent intent = new Intent(context, PlayerService.class);
             intent.putExtra("previewUrl", parcelableTrack.previewURL);
@@ -184,6 +191,7 @@ public class PlayerActivityFragment extends Fragment{
 //            PlayTrackService.start(context, parcelableTrack.previewURL);
             musicSrv.controlMusic(intent);
             playing = true;
+
         }
     }
 

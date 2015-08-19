@@ -17,6 +17,9 @@ import android.widget.TextView;
 import com.example.noahpatterson.spotifystreamer.R;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Random;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
     private final IBinder playerBind = new PlayerBinder();
@@ -28,16 +31,70 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     MediaPlayer mMediaPlayer;
     String playingURL = null;
     private View fragmentView =  null;
-    private Activity fragmentActivity;
+    private Thread updaterThread;
+    private Boolean completed = false;
+    Handler handler;
+
+    private void startUpdater() {
+        updaterThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Thread myCurrent = Thread.currentThread();
+                while (!myCurrent.isInterrupted() && updaterThread == myCurrent) {
+                    notifyUpdate();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Log.e("update thread", "Error pausing update thread");
+                        break;
+                    }
+                }
+            }
+        });
+        updaterThread.start();
+    }
+
+    private void notifyStart() {
+        startUpdater();
+    }
+
+    private void runOnUiThread(Runnable runnable) {
+        handler.post(runnable);
+    }
+
+    private void notifyUpdate() {
+        Log.d("update thread", "updating seekbar");
+        if (mMediaPlayer != null) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+                    seekBar.setProgress(mMediaPlayer.getCurrentPosition());
+
+                    TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+                    String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(mMediaPlayer.getCurrentPosition()));
+                    trackTimeTextView.setText(formattedDuration);
+                }
+            });
+
+        }
+    }
+
+
+    private String name = "PlayerService" + new Random().nextInt();
 
     @Override
     public void onCreate() {
-        super.onCreate();
+        Log.d("player service", "in onCreate: "+ name);
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mMediaPlayer.setOnErrorListener(this);
         mMediaPlayer.setOnPreparedListener(this);
         mMediaPlayer.setOnCompletionListener(this);
+        handler = new Handler();
+        super.onCreate();
+
+
     }
 
     public class PlayerBinder extends Binder {
@@ -49,31 +106,40 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public void setFragmentView(View fragmentView) {
         this.fragmentView = fragmentView;
     }
-    public void setFragmentActivity(Activity activity) {
-        this.fragmentActivity = activity;
-    }
 
     public void controlMusic(Intent intent) {
+        Log.d("player service", "in controlMusic: "+ name);
         if (intent.getAction().equals(ACTION_PLAY)) {
             String previewURL = intent.getStringExtra("previewUrl");
-            if (playingURL != previewURL) {
-                mMediaPlayer.reset();
-                try {
-                    mMediaPlayer.setDataSource(previewURL);
-                } catch(IllegalArgumentException e) {
-                    Log.e("PlayTrackService start", "malformed url");
-                } catch (IOException e) {
-                    Log.e("PlayTrackService start", "track may not exist");
-                }
+             if (playingURL == previewURL && !completed) {
+                 if (fragmentView != null) {
+                     final SeekBar mSeekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+                     mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
 
-                mMediaPlayer.prepareAsync(); // prepare async to not block main thread
-                playingURL = previewURL;
+                     final TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+                     String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(mMediaPlayer.getCurrentPosition()));
+                     trackTimeTextView.setText(formattedDuration);
+                 }
+                 notifyStart();
+                 mMediaPlayer.start();
             } else {
-                mMediaPlayer.start();
+                 mMediaPlayer.reset();
+                 completed = false;
+                 try {
+                     mMediaPlayer.setDataSource(previewURL);
+                 } catch(IllegalArgumentException e) {
+                     Log.e("PlayTrackService start", "malformed url");
+                 } catch (IOException e) {
+                     Log.e("PlayTrackService start", "track may not exist");
+                 }
+
+                 mMediaPlayer.prepareAsync(); // prepare async to not block main thread
+                 playingURL = previewURL;
             }
 
         } else if (intent.getAction().equals(ACTION_PAUSE)) {
             if (mMediaPlayer != null) {
+                updaterThread.interrupt();
                 mMediaPlayer.pause();
             }
         } else if (intent.getAction().equals(ACTION_RESET)) {
@@ -85,6 +151,9 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             int seekPosition = intent.getIntExtra("seek_position",0);
             if (mMediaPlayer != null) {
                 mMediaPlayer.seekTo(seekPosition);
+                final TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+                String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(mMediaPlayer.getCurrentPosition()));
+                trackTimeTextView.setText(formattedDuration);
             }
         }
     }
@@ -93,23 +162,21 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return mMediaPlayer;
     }
 
+
     /** Called when MediaPlayer is ready */
     @Override
     public void onPrepared(MediaPlayer player) {
+        Log.d("player service", "in onPrepared: "+ name);
+        if(fragmentView != null) {
+            final SeekBar mSeekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+            mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
+
+            final TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+            String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(mMediaPlayer.getCurrentPosition()));
+            trackTimeTextView.setText(formattedDuration);
+        }
+        notifyStart();
         player.start();
-        final SeekBar mSeekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-        final Handler mHandler = new Handler();
-        //Make sure you update Seekbar on UI thread
-        fragmentActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mMediaPlayer != null) {
-                    int mCurrentPosition = mMediaPlayer.getCurrentPosition() / 1000;
-                    mSeekBar.setProgress(mCurrentPosition);
-                }
-                mHandler.postDelayed(this, 1000);
-            }
-        });
     }
 
     @Override
@@ -124,8 +191,13 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-        Log.d("player service", "in onCompletion");
+        Log.d("player service", "in onCompletion: "+ name);
+        completed = true;
+        updaterThread.interrupt();
         mp.reset();
+//        mp.release();
+//        mMediaPlayer = null;
+
         ImageButton playButton = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
         playButton.setImageResource(android.R.drawable.ic_media_play);
 
@@ -135,15 +207,18 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         TextView trackTime = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
         trackTime.setText("00:00");
 
-//        mp.release();
-//        mMediaPlayer = null;
+
+
+//
         // release and clear mMediaPlayer?
         // somehow update button and reset scrubBar
     }
 
     @Override
     public void onDestroy() {
+        Log.d("player service", "in onDestroy: "+ name);
         if (mMediaPlayer != null) {
+            updaterThread.interrupt();
             mMediaPlayer.release();
             mMediaPlayer = null;
         }

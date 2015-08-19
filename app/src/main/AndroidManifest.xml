@@ -40,10 +40,6 @@
         </activity>
 
         <service
-            android:name=".service.PlayTrackService"
-            android:exported="false" >
-        </service>
-        <service
             android:name=".service.PlayerService"
             android:enabled="true"
             android:exported="false" >
