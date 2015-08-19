@@ -1,8 +1,11 @@
 package com.example.noahpatterson.spotifystreamer;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.util.Log;
@@ -14,25 +17,27 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.example.noahpatterson.spotifystreamer.service.MyService;
+import com.example.noahpatterson.spotifystreamer.service.PlayerService;
 import com.squareup.picasso.Picasso;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlayerActivityFragment extends Fragment {
+public class PlayerActivityFragment extends Fragment{
 
     private ParcelableTrack parcelableTrack = null;
     private Boolean playing = false;
+    private PlayerService musicSrv;
+    private Intent playIntent;
+    private boolean musicBound=false;
+    private View fragmentView;
 
     public PlayerActivityFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d("PlayerActivityFragment", "in onCreate");
         //bind play button click listener
 
 
@@ -41,9 +46,40 @@ public class PlayerActivityFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        Log.d("PlayerActivityFragment", "in onStart");
+        super.onStart();
+        if(playIntent==null){
+            playIntent = new Intent(getActivity(), PlayerService.class);
+            getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            getActivity().startService(playIntent);
+        }
+    }
+
+    //connect to the service
+    private ServiceConnection musicConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            PlayerService.PlayerBinder binder = (PlayerService.PlayerBinder) service;
+            //get service
+            musicSrv = binder.getService();
+//            //pass list
+//            musicSrv.setList(songList);
+            musicBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBound = false;
+        }
+    };
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        final View fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
+        Log.d("PlayerActivityFragment", "in onCreateView");
+        fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
 
         // populate player layout
         //pull track parceable
@@ -81,10 +117,16 @@ public class PlayerActivityFragment extends Fragment {
 
         // set playbutton click listener
         final ImageButton playButton = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
+
+        if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
+            playButton.setImageResource(android.R.drawable.ic_media_pause);
+        } else {
+            playButton.setImageResource(android.R.drawable.ic_media_play);
+        }
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                playTrack(fragmentView.getContext(), playButton);
+                playTrack(fragmentView.getContext(), fragmentView);
             }
         });
 
@@ -96,10 +138,11 @@ public class PlayerActivityFragment extends Fragment {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    Intent intent = new Intent(fragmentView.getContext(), MyService.class);
+                    Intent intent = new Intent(fragmentView.getContext(), PlayerService.class);
                     intent.putExtra("seek_position", progress);
                     intent.setAction("com.example.action.SEEK");
-                    getActivity().startService(intent);
+//                    getActivity().startService(intent);
+                    musicSrv.controlMusic(intent);
                 }
             }
 
@@ -113,35 +156,42 @@ public class PlayerActivityFragment extends Fragment {
 
             }
         });
+
         return fragmentView;
     }
 
 
+    public void playTrack(Context context, View fragmentView) {
+        if (musicSrv != null) {
+            musicSrv.setFragmentView(fragmentView);
+            musicSrv.setFragmentActivity(getActivity());
+        }
+        ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
+        if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
+            button.setImageResource(android.R.drawable.ic_media_play);
+            Intent intent = new Intent(context, PlayerService.class);
+            intent.setAction("com.example.action.PAUSE");
+//            getActivity().startService(intent);
+            musicSrv.controlMusic(intent);
+            playing = false;
 
-    public void playTrack(Context context, ImageButton button) {
-        if (playing == false) {
+        } else {
             button.setImageResource(android.R.drawable.ic_media_pause);
-            Intent intent = new Intent(context, MyService.class);
+            Intent intent = new Intent(context, PlayerService.class);
             intent.putExtra("previewUrl", parcelableTrack.previewURL);
             intent.setAction("com.example.action.PLAY");
-            getActivity().startService(intent);
+//            getActivity().startService(intent);
 //            PlayTrackService.start(context, parcelableTrack.previewURL);
+            musicSrv.controlMusic(intent);
             playing = true;
-        } else {
-            button.setImageResource(android.R.drawable.ic_media_play);
-            Intent intent = new Intent(context, MyService.class);
-            intent.setAction("com.example.action.PAUSE");
-            getActivity().startService(intent);
-            playing = false;
         }
     }
 
     @Override
     public void onDestroy() {
         Log.d("PlayerActivityFragment", "in onDestroy");
-//        Intent intent = new Intent(getActivity(), MyService.class);
-//        intent.setAction("com.example.action.RESET");
-//        getActivity().startService(intent);
+        getActivity().unbindService(musicConnection);
         super.onDestroy();
     }
+
 }
