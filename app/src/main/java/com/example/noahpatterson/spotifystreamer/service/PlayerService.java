@@ -1,6 +1,5 @@
 package com.example.noahpatterson.spotifystreamer.service;
 
-import android.app.Activity;
 import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -109,8 +108,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     public void controlMusic(Intent intent) {
         Log.d("player service", "in controlMusic: "+ name);
+        String previewURL = intent.getStringExtra("previewUrl");
         if (intent.getAction().equals(ACTION_PLAY)) {
-            String previewURL = intent.getStringExtra("previewUrl");
              if (playingURL == previewURL && !completed) {
                  if (fragmentView != null) {
                      final SeekBar mSeekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
@@ -138,9 +137,25 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             }
 
         } else if (intent.getAction().equals(ACTION_PAUSE)) {
-            if (mMediaPlayer != null) {
+            if (mMediaPlayer != null && playingURL == previewURL) {
                 updaterThread.interrupt();
                 mMediaPlayer.pause();
+            } else {
+                ImageButton button = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
+                button.setImageResource(android.R.drawable.ic_media_pause);
+                updaterThread.interrupt();
+                mMediaPlayer.reset();
+                completed = false;
+                try {
+                    mMediaPlayer.setDataSource(previewURL);
+                } catch(IllegalArgumentException e) {
+                    Log.e("PlayTrackService start", "malformed url");
+                } catch (IOException e) {
+                    Log.e("PlayTrackService start", "track may not exist");
+                }
+
+                mMediaPlayer.prepareAsync(); // prepare async to not block main thread
+                playingURL = previewURL;
             }
         } else if (intent.getAction().equals(ACTION_RESET)) {
             if (mMediaPlayer != null) {

@@ -20,9 +20,6 @@ import android.widget.TextView;
 import com.example.noahpatterson.spotifystreamer.service.PlayerService;
 import com.squareup.picasso.Picasso;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /**
  * A placeholder fragment containing a simple view.
  */
@@ -36,6 +33,24 @@ public class PlayerActivityFragment extends Fragment{
     private View fragmentView;
     private Thread seekBarThread;
     private int seekBarProgress = 0;
+    PlayerService.PlayerBinder binder;
+    private ServiceConnection musicConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("PlayerActivityFragment", "in onServiceConnected");
+            binder = (PlayerService.PlayerBinder) service;
+
+            //get service
+            musicSrv = binder.getService();
+            musicBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBound = false;
+        }
+    };;
 
     public PlayerActivityFragment() {
     }
@@ -47,43 +62,37 @@ public class PlayerActivityFragment extends Fragment{
 
 
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            playing = savedInstanceState.getBoolean("isPlaying");
+        }
 
+//        if(playIntent==null){
+
+
+
+        setRetainInstance(true);
     }
+
+//    }
 
     @Override
     public void onStart() {
         Log.d("PlayerActivityFragment", "in onStart");
         super.onStart();
-        if(playIntent==null){
-            playIntent = new Intent(getActivity(), PlayerService.class);
-            getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            getActivity().startService(playIntent);
-        }
+
     }
 
     //connect to the service
-    private ServiceConnection musicConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d("PlayerActivityFragment", "in onServiceConnected");
-            PlayerService.PlayerBinder binder = (PlayerService.PlayerBinder) service;
-            //get service
-            musicSrv = binder.getService();
-//            //pass list
-//            musicSrv.setList(songList);
-            musicBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            musicBound = false;
-        }
-    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        playIntent = new Intent(getActivity(), PlayerService.class);
+        getActivity().startService(playIntent);
+        getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+
+
         Log.d("PlayerActivityFragment", "in onCreateView");
         fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
 
@@ -123,8 +132,9 @@ public class PlayerActivityFragment extends Fragment{
 
         // set playbutton click listener
         final ImageButton playButton = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
-
-        if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
+        if (musicSrv == null && playing) {
+            playButton.setImageResource(android.R.drawable.ic_media_pause);
+        } else if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
             playButton.setImageResource(android.R.drawable.ic_media_pause);
         } else {
             playButton.setImageResource(android.R.drawable.ic_media_play);
@@ -173,19 +183,17 @@ public class PlayerActivityFragment extends Fragment{
             musicSrv.setFragmentView(fragmentView);
         }
         ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.putExtra("previewUrl", parcelableTrack.previewURL);
         if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
             button.setImageResource(android.R.drawable.ic_media_play);
-            Intent intent = new Intent(context, PlayerService.class);
             intent.setAction("com.example.action.PAUSE");
 //            getActivity().startService(intent);
             musicSrv.controlMusic(intent);
             playing = false;
 
         } else {
-
             button.setImageResource(android.R.drawable.ic_media_pause);
-            Intent intent = new Intent(context, PlayerService.class);
-            intent.putExtra("previewUrl", parcelableTrack.previewURL);
             intent.setAction("com.example.action.PLAY");
 //            getActivity().startService(intent);
 //            PlayTrackService.start(context, parcelableTrack.previewURL);
@@ -196,10 +204,26 @@ public class PlayerActivityFragment extends Fragment{
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        Log.d("PlayerActivityFragment", "in onDestroy");
+        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public void onDestroy() {
         Log.d("PlayerActivityFragment", "in onDestroy");
-        getActivity().unbindService(musicConnection);
+//        getActivity().unbindService(musicConnection);
         super.onDestroy();
     }
 
+    @Override
+    public void onStop() {
+        Log.d("PlayerActivityFragment", "in onStop");
+        if (musicConnection != null) {
+            getActivity().unbindService(musicConnection);
+        }
+        super.onStop();
+
+    }
 }
