@@ -4,9 +4,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -21,12 +21,13 @@ import java.util.Date;
 import java.util.Random;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
-    private final IBinder playerBind = new PlayerBinder();
+//    private final IBinder playerBind = new PlayerBinder();
 
     private static final String ACTION_PLAY = "com.example.action.PLAY";
     private static final String ACTION_PAUSE = "com.example.action.PAUSE";
     private static final String ACTION_RESET = "com.example.action.RESET";
     private static final String ACTION_SEEK = "com.example.action.SEEK";
+    public static final String ACTION_CURR_POSITION = "com.example.action.CURR_POSITION";
     MediaPlayer mMediaPlayer;
     String playingURL = null;
     private View fragmentView =  null;
@@ -64,18 +65,14 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     private void notifyUpdate() {
         Log.d("update thread", "updating seekbar");
         if (mMediaPlayer != null) {
-            runOnUiThread(new Runnable() {
+            handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-                    seekBar.setProgress(mMediaPlayer.getCurrentPosition());
-
-                    TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
-                    String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(mMediaPlayer.getCurrentPosition()));
-                    trackTimeTextView.setText(formattedDuration);
+                   Intent currPositionIntent = new Intent(ACTION_CURR_POSITION);
+                    currPositionIntent.putExtra("currPosition", mMediaPlayer.getCurrentPosition());
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(currPositionIntent);
                 }
             });
-
         }
     }
 
@@ -96,11 +93,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     }
 
-    public class PlayerBinder extends Binder {
-        public PlayerService getService() {
-            return PlayerService.this;
-        }
-    }
+//    public class PlayerBinder extends Binder {
+//        public PlayerService getService() {
+//            return PlayerService.this;
+//        }
+//    }
 
     public void setFragmentView(View fragmentView) {
         this.fragmentView = fragmentView;
@@ -200,8 +197,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return true;
     }
     @Override
+//    public IBinder onBind(Intent intent) {
+//        return playerBind;
+//    }
     public IBinder onBind(Intent intent) {
-        return playerBind;
+        return null;
     }
 
     @Override

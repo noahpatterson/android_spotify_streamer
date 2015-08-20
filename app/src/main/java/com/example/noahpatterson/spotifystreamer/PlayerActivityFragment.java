@@ -1,12 +1,12 @@
 package com.example.noahpatterson.spotifystreamer;
 
-import android.content.ComponentName;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +19,9 @@ import android.widget.TextView;
 
 import com.example.noahpatterson.spotifystreamer.service.PlayerService;
 import com.squareup.picasso.Picasso;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -33,24 +36,24 @@ public class PlayerActivityFragment extends Fragment{
     private View fragmentView;
     private Thread seekBarThread;
     private int seekBarProgress = 0;
-    PlayerService.PlayerBinder binder;
-    private ServiceConnection musicConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d("PlayerActivityFragment", "in onServiceConnected");
-            binder = (PlayerService.PlayerBinder) service;
-
-            //get service
-            musicSrv = binder.getService();
-            musicBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            musicBound = false;
-        }
-    };;
+//    PlayerService.PlayerBinder binder;
+//    private ServiceConnection musicConnection = new ServiceConnection() {
+//
+//        @Override
+//        public void onServiceConnected(ComponentName name, IBinder service) {
+//            Log.d("PlayerActivityFragment", "in onServiceConnected");
+//            binder = (PlayerService.PlayerBinder) service;
+//
+//            //get service
+//            musicSrv = binder.getService();
+//            musicBound = true;
+//        }
+//
+//        @Override
+//        public void onServiceDisconnected(ComponentName name) {
+//            musicBound = false;
+//        }
+//    };
 
     public PlayerActivityFragment() {
     }
@@ -58,22 +61,13 @@ public class PlayerActivityFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d("PlayerActivityFragment", "in onCreate");
-        //bind play button click listener
-
-
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null) {
             playing = savedInstanceState.getBoolean("isPlaying");
         }
-
-//        if(playIntent==null){
-
-
-
         setRetainInstance(true);
     }
 
-//    }
 
     @Override
     public void onStart() {
@@ -82,7 +76,42 @@ public class PlayerActivityFragment extends Fragment{
 
     }
 
-    //connect to the service
+    @Override
+    public void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, filter);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(currPositionReciever);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        Log.d("PlayerActivityFragment", "in onDestroy");
+        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("PlayerActivityFragment", "in onDestroy");
+//        getActivity().unbindService(musicConnection);
+        super.onDestroy();
+    }
+
+    @Override
+    public void onStop() {
+        Log.d("PlayerActivityFragment", "in onStop");
+//        if (musicConnection != null) {
+//            getActivity().unbindService(musicConnection);
+//        }
+        super.onStop();
+
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -90,7 +119,7 @@ public class PlayerActivityFragment extends Fragment{
 
         playIntent = new Intent(getActivity(), PlayerService.class);
         getActivity().startService(playIntent);
-        getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+//        getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
 
 
         Log.d("PlayerActivityFragment", "in onCreateView");
@@ -203,27 +232,18 @@ public class PlayerActivityFragment extends Fragment{
         }
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        Log.d("PlayerActivityFragment", "in onDestroy");
-        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
-        super.onSaveInstanceState(outState);
-    }
+    private BroadcastReceiver currPositionReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int currPosition = intent.getIntExtra("currPosition", 0);
+            SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+            seekBar.setProgress(currPosition);
 
-    @Override
-    public void onDestroy() {
-        Log.d("PlayerActivityFragment", "in onDestroy");
-//        getActivity().unbindService(musicConnection);
-        super.onDestroy();
-    }
-
-    @Override
-    public void onStop() {
-        Log.d("PlayerActivityFragment", "in onStop");
-        if (musicConnection != null) {
-            getActivity().unbindService(musicConnection);
+            TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+            String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(currPosition));
+            trackTimeTextView.setText(formattedDuration);
         }
-        super.onStop();
+    };
 
-    }
+
 }
