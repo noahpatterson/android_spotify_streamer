@@ -16,11 +16,13 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.noahpatterson.spotifystreamer.service.PlayerService;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -36,6 +38,8 @@ public class PlayerActivityFragment extends Fragment{
 //    private Intent playIntent;
 //    private boolean musicBound=false;
     private View fragmentView;
+    private ArrayList<ParcelableTrack> mParcelableTrackArrayList;
+    private int mCurrentTrackPosition;
 //    private Thread seekBarThread;
 //    private int seekBarProgress = 0;
 //    PlayerService.PlayerBinder binder;
@@ -64,10 +68,16 @@ public class PlayerActivityFragment extends Fragment{
     public void onCreate(Bundle savedInstanceState) {
         Log.d("PlayerActivityFragment", "in onCreate");
         super.onCreate(savedInstanceState);
+        mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra("allTracks");
+
         if (savedInstanceState != null) {
             playing = savedInstanceState.getBoolean("playing", false);
             playingURL = savedInstanceState.getString("playingURL", null);
-
+            parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
+            mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
+        } else {
+            parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
+            mCurrentTrackPosition = getActivity().getIntent().getIntExtra("currentTrackPosition", 0);
         }
 //        setRetainInstance(true);
     }
@@ -86,7 +96,6 @@ public class PlayerActivityFragment extends Fragment{
 
         // populate player layout
         //pull track parceable
-        parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
 
         //assign artistNames
         TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
@@ -135,8 +144,91 @@ public class PlayerActivityFragment extends Fragment{
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                playTrack(fragmentView.getContext());
+            }
+        });
 
-                playTrack(fragmentView.getContext(), fragmentView);
+        //next track
+        final ImageButton nextTrackButton = (ImageButton) fragmentView.findViewById(R.id.playerNextButton);
+        nextTrackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mCurrentTrackPosition == mParcelableTrackArrayList.size() -1) {
+                    Toast.makeText(getActivity().getApplicationContext(), R.string.end_of_top_tracks_list, Toast.LENGTH_LONG).show();
+                } else {
+                    parcelableTrack = mParcelableTrackArrayList.get(mCurrentTrackPosition + 1);
+                    mCurrentTrackPosition += 1;
+                    //swap track info
+                    //assign artistNames
+                    TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
+                    String allArtistNames = "";
+                    for (String artistName : parcelableTrack.artistNames) {
+                        allArtistNames += artistName + " ";
+                    }
+                    artistNameTextView.setText(allArtistNames);
+
+                    //assign albumName
+                    TextView albumNameTextView = (TextView) fragmentView.findViewById(R.id.playerAlbumName);
+                    albumNameTextView.setText(parcelableTrack.albumName);
+
+                    //assign albumImage
+                    ImageView albumImageImageView = (ImageView) fragmentView.findViewById(R.id.playerAlbumImage);
+                    if (TextUtils.isEmpty(parcelableTrack.albumImage)) {
+                        Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(albumImageImageView);
+                    } else {
+                        Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(albumImageImageView);
+                    }
+
+                    //assign trackDurationc
+                    TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
+                    trackNameTextView.setText(parcelableTrack.name);
+
+                    //play track
+                    seek = 0;
+                    playTrack(fragmentView.getContext());
+                }
+            }
+        });
+
+        //previous track
+        final ImageButton prevTrackButton = (ImageButton) fragmentView.findViewById(R.id.playerPreviousButton);
+        prevTrackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mCurrentTrackPosition == 0) {
+                    Toast.makeText(getActivity().getApplicationContext(), R.string.end_of_top_tracks_list, Toast.LENGTH_LONG).show();
+                } else {
+                    parcelableTrack = mParcelableTrackArrayList.get(mCurrentTrackPosition - 1);
+                    mCurrentTrackPosition -= 1;
+                    //swap track info
+                    //assign artistNames
+                    TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
+                    String allArtistNames = "";
+                    for (String artistName : parcelableTrack.artistNames) {
+                        allArtistNames += artistName + " ";
+                    }
+                    artistNameTextView.setText(allArtistNames);
+
+                    //assign albumName
+                    TextView albumNameTextView = (TextView) fragmentView.findViewById(R.id.playerAlbumName);
+                    albumNameTextView.setText(parcelableTrack.albumName);
+
+                    //assign albumImage
+                    ImageView albumImageImageView = (ImageView) fragmentView.findViewById(R.id.playerAlbumImage);
+                    if (TextUtils.isEmpty(parcelableTrack.albumImage)) {
+                        Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(albumImageImageView);
+                    } else {
+                        Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(albumImageImageView);
+                    }
+
+                    //assign trackDurationc
+                    TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
+                    trackNameTextView.setText(parcelableTrack.name);
+
+                    //play track
+                    seek = 0;
+                    playTrack(fragmentView.getContext());
+                }
             }
         });
 
@@ -223,6 +315,8 @@ public class PlayerActivityFragment extends Fragment{
         outState.putBoolean("playing", playing);
         if (parcelableTrack != null) {
             outState.putString("playingURL", parcelableTrack.previewURL);
+            outState.putParcelable("parcelableTrack", parcelableTrack);
+            outState.putInt("currentPosition", mCurrentTrackPosition);
         }
         super.onSaveInstanceState(outState);
     }
@@ -245,7 +339,7 @@ public class PlayerActivityFragment extends Fragment{
 
 
 
-    public void playTrack(Context context, final View fragmentView) {
+    public void playTrack(Context context) {
         Log.d("PlayerActivityFragment", "in playTrack");
         ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
 //        if (musicSrv != null) {

@@ -96,6 +96,8 @@ public class TopTracksFragment extends Fragment {
                 Intent playerIntent = new Intent(getActivity(), PlayerActivity.class);
 
                 playerIntent.putExtra("track", parcelableTrack);
+                playerIntent.putExtra("allTracks", mArrayOfTracks);
+                playerIntent.putExtra("currentTrackPosition", position);
 
                 startActivity(playerIntent);
             }
