@@ -30,12 +30,14 @@ public class PlayerActivityFragment extends Fragment{
 
     private ParcelableTrack parcelableTrack = null;
     private Boolean playing = false;
-    private PlayerService musicSrv;
-    private Intent playIntent;
-    private boolean musicBound=false;
+    private String playingURL;
+    private int seek = 0;
+//    private PlayerService musicSrv;
+//    private Intent playIntent;
+//    private boolean musicBound=false;
     private View fragmentView;
-    private Thread seekBarThread;
-    private int seekBarProgress = 0;
+//    private Thread seekBarThread;
+//    private int seekBarProgress = 0;
 //    PlayerService.PlayerBinder binder;
 //    private ServiceConnection musicConnection = new ServiceConnection() {
 //
@@ -63,62 +65,19 @@ public class PlayerActivityFragment extends Fragment{
         Log.d("PlayerActivityFragment", "in onCreate");
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null) {
-            playing = savedInstanceState.getBoolean("isPlaying");
+            playing = savedInstanceState.getBoolean("playing", false);
+            playingURL = savedInstanceState.getString("playingURL", null);
+
         }
-        setRetainInstance(true);
-    }
-
-
-    @Override
-    public void onStart() {
-        Log.d("PlayerActivityFragment", "in onStart");
-        super.onStart();
-
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        IntentFilter filter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, filter);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(currPositionReciever);
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        Log.d("PlayerActivityFragment", "in onDestroy");
-        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    public void onDestroy() {
-        Log.d("PlayerActivityFragment", "in onDestroy");
-//        getActivity().unbindService(musicConnection);
-        super.onDestroy();
-    }
-
-    @Override
-    public void onStop() {
-        Log.d("PlayerActivityFragment", "in onStop");
-//        if (musicConnection != null) {
-//            getActivity().unbindService(musicConnection);
-//        }
-        super.onStop();
-
+//        setRetainInstance(true);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        playIntent = new Intent(getActivity(), PlayerService.class);
-        getActivity().startService(playIntent);
+//        playIntent = new Intent(getActivity(), PlayerService.class);
+//        getActivity().startService(playIntent);
 //        getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
 
 
@@ -161,16 +120,22 @@ public class PlayerActivityFragment extends Fragment{
 
         // set playbutton click listener
         final ImageButton playButton = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
-        if (musicSrv == null && playing) {
-            playButton.setImageResource(android.R.drawable.ic_media_pause);
-        } else if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
+        if (playing) {
             playButton.setImageResource(android.R.drawable.ic_media_pause);
         } else {
             playButton.setImageResource(android.R.drawable.ic_media_play);
         }
+//        if (musicSrv == null && playing) {
+//            playButton.setImageResource(android.R.drawable.ic_media_pause);
+//        } else if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
+//            playButton.setImageResource(android.R.drawable.ic_media_pause);
+//        } else {
+//            playButton.setImageResource(android.R.drawable.ic_media_play);
+//        }
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 playTrack(fragmentView.getContext(), fragmentView);
             }
         });
@@ -183,11 +148,19 @@ public class PlayerActivityFragment extends Fragment{
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    Intent intent = new Intent(fragmentView.getContext(), PlayerService.class);
-                    intent.putExtra("seek_position", progress);
-                    intent.setAction("com.example.action.SEEK");
-//                    getActivity().startService(intent);
-                    musicSrv.controlMusic(intent);
+
+                    final TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+                String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(progress));
+                trackTimeTextView.setText(formattedDuration);
+
+                    if (playing) {
+                        Intent intent = new Intent(fragmentView.getContext(), PlayerService.class);
+                        intent.putExtra("seek_position", progress);
+                        intent.setAction("com.example.action.SEEK");
+                        getActivity().startService(intent);
+//                    musicSrv.controlMusic(intent);
+                    }
+                    seek = progress;
                 }
             }
 
@@ -206,44 +179,156 @@ public class PlayerActivityFragment extends Fragment{
     }
 
 
+
+    @Override
+    public void onStart() {
+        Log.d("PlayerActivityFragment", "in onStart");
+        super.onStart();
+
+    }
+
+    @Override
+    public void onResume() {
+        Log.d("PlayerActivityFragment", "in onResume");
+        super.onResume();
+        IntentFilter currPositionFilter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, currPositionFilter);
+
+        IntentFilter playerCompleteFilter = new IntentFilter(PlayerService.ACTION_COMPLETE);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(playerCompleteReciever, playerCompleteFilter);
+    }
+
+    @Override
+    public void onPause() {
+        Log.d("PlayerActivityFragment", "in onPause");
+        super.onPause();
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(currPositionReciever);
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(playerCompleteReciever);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        Log.d("PlayerActivityFragment", "in onSaveInstanceState");
+//        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
+//        Boolean statePressed = false;
+//
+//        int[] states = fragmentView.findViewById(R.id.playerPlayButton).getDrawableState();
+//        for (int state : states)
+//        {
+//            if (state == android.R.attr.state_pressed) {
+//                statePressed = true;
+//            }
+//        }
+
+        outState.putBoolean("playing", playing);
+        if (parcelableTrack != null) {
+            outState.putString("playingURL", parcelableTrack.previewURL);
+        }
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onStop() {
+        Log.d("PlayerActivityFragment", "in onStop");
+//        if (musicConnection != null) {
+//            getActivity().unbindService(musicConnection);
+//        }
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("PlayerActivityFragment", "in onDestroy");
+//        getActivity().unbindService(musicConnection);
+        super.onDestroy();
+    }
+
+
+
     public void playTrack(Context context, final View fragmentView) {
         Log.d("PlayerActivityFragment", "in playTrack");
-        if (musicSrv != null) {
-            musicSrv.setFragmentView(fragmentView);
-        }
         ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
+//        if (musicSrv != null) {
+//            musicSrv.setFragmentView(fragmentView);
+//        }
+//        ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
         Intent intent = new Intent(context, PlayerService.class);
-        intent.putExtra("previewUrl", parcelableTrack.previewURL);
-        if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
-            button.setImageResource(android.R.drawable.ic_media_play);
-            intent.setAction("com.example.action.PAUSE");
-//            getActivity().startService(intent);
-            musicSrv.controlMusic(intent);
-            playing = false;
 
-        } else {
-            button.setImageResource(android.R.drawable.ic_media_pause);
-            intent.setAction("com.example.action.PLAY");
-//            getActivity().startService(intent);
-//            PlayTrackService.start(context, parcelableTrack.previewURL);
-            musicSrv.controlMusic(intent);
-            playing = true;
+        if (playing && parcelableTrack.previewURL.equals(playingURL)) {
+            //pause command
+            intent.setAction("com.example.action.PAUSE");
+            getActivity().startService(intent);
+            playing = false;
+            button.setImageResource(android.R.drawable.ic_media_play);
+            final SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+            seek = seekBar.getProgress();
 
         }
+//        else if (playing == 1) {
+//            //start new track
+//            intent.putExtra("previewURL", parcelableTrack.previewURL);
+//            intent.setAction("com.example.action.PLAY");
+//            getActivity().startService(intent);
+//        }
+        else {
+            intent.putExtra("previewURL", parcelableTrack.previewURL);
+            intent.putExtra("seek", seek);
+            intent.setAction("com.example.action.PLAY");
+            getActivity().startService(intent);
+            playingURL = parcelableTrack.previewURL;
+            button.setImageResource(android.R.drawable.ic_media_pause);
+        }
+//        intent.putExtra("previewUrl", parcelableTrack.previewURL);
+//        if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
+//            button.setImageResource(android.R.drawable.ic_media_play);
+//            intent.setAction("com.example.action.PAUSE");
+////            getActivity().startService(intent);
+//            musicSrv.controlMusic(intent);
+//            playing = false;
+//
+//        } else {
+//            button.setImageResource(android.R.drawable.ic_media_pause);
+//            intent.setAction("com.example.action.PLAY");
+////            getActivity().startService(intent);
+//            musicSrv.controlMusic(intent);
+//            playing = true;
+//
+//        }
     }
 
     private BroadcastReceiver currPositionReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            int currPosition = intent.getIntExtra("currPosition", 0);
-            SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-            seekBar.setProgress(currPosition);
+            if (parcelableTrack.previewURL.equals(playingURL)) {
+                int currPosition = intent.getIntExtra("currPosition", 0);
+                SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+                seekBar.setProgress(currPosition);
 
-            TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
-            String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(currPosition));
-            trackTimeTextView.setText(formattedDuration);
+                TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+                String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(currPosition));
+                trackTimeTextView.setText(formattedDuration);
+                playing = true;
+            }
         }
     };
+
+    private BroadcastReceiver playerCompleteReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ImageButton playButton = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
+            playButton.setImageResource(android.R.drawable.ic_media_play);
+
+            SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
+            seekBar.setProgress(0);
+
+            TextView trackTime = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
+            trackTime.setText("00:00");
+            playing = false;
+            seek = 0;
+        }
+    };
+
+
 
 
 }

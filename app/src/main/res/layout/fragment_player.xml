@@ -84,7 +84,7 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:id="@+id/playerPlayButton"
-            android:src="@android:drawable/ic_media_play"
+            android:src="@drawable/playbutton"
             />
         <ImageButton
             android:layout_width="0dp"
