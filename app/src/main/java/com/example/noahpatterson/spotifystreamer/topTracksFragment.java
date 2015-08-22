@@ -107,13 +107,7 @@ public class TopTracksFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ParcelableTrack parcelableTrack = (ParcelableTrack) parent.getItemAtPosition(position);
-                Intent playerIntent = new Intent(getActivity(), PlayerActivity.class);
-
-                playerIntent.putExtra("track", parcelableTrack);
-                playerIntent.putExtra("allTracks", mArrayOfTracks);
-                playerIntent.putExtra("currentTrackPosition", position);
-
-                startActivity(playerIntent);
+                showDialog(parcelableTrack, position);
             }
         });
     }
@@ -218,6 +212,32 @@ public class TopTracksFragment extends Fragment {
                 parcelableTracks.add(new ParcelableTrack(track.name, track.album.name, albumImage, track.preview_url, artistArrayList, track.duration_ms ));
             }
             return parcelableTracks;
+        }
+    }
+
+    public void showDialog(ParcelableTrack parcelableTrack, int position) {
+        if (isLargeLayout) {
+            // The device is using a large layout, so show the fragment as a dialog
+            PlayerFragment newFragment = new PlayerFragment();
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("track", parcelableTrack);
+            bundle.putParcelableArrayList("allTracks", mArrayOfTracks);
+            bundle.putInt("currentTrackPosition", position);
+
+            newFragment.setArguments(bundle);
+            newFragment.show(getActivity().getFragmentManager(), "dialog");
+        } else {
+            Intent playerIntent = new Intent(getActivity(), PlayerActivity.class);
+
+            playerIntent.putExtra("track", parcelableTrack);
+            playerIntent.putExtra("allTracks", mArrayOfTracks);
+            playerIntent.putExtra("currentTrackPosition", position);
+
+            startActivity(playerIntent);
+
+
+
+
         }
     }
 }

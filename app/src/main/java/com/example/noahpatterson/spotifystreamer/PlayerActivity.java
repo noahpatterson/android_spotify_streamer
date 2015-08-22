@@ -2,37 +2,31 @@ package com.example.noahpatterson.spotifystreamer;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.util.Log;
 
 public class PlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("playerActivity", "in onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+
+//        if (getSupportFragmentManager().findFragmentByTag("player") == null) {
+//            PlayerFragment fragment = new PlayerFragment();
+//
+//            Bundle bundle = new Bundle();
+//            bundle.putParcelable("track", getIntent().getParcelableExtra("track"));
+//            bundle.putParcelableArrayList("allTracks", getIntent().getParcelableArrayListExtra("allTracks"));
+//            bundle.putInt("currentTrackPosition", getIntent().getIntExtra("currentTrackPosition", 0));
+//
+//            fragment.setArguments(bundle);
+//            getSupportFragmentManager().beginTransaction()
+//                    .replace(R.id.player_container, fragment)
+//                    .addToBackStack("player")
+//                    .commit();
+//        }
+
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_player, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 }

@@ -1,17 +1,19 @@
 package com.example.noahpatterson.spotifystreamer;
 
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+import android.app.DialogFragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -28,47 +30,48 @@ import java.util.Date;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlayerFragment extends Fragment{
+public class PlayerFragment extends DialogFragment {
 
     private ParcelableTrack parcelableTrack = null;
     private Boolean playing = false;
     private String playingURL;
     private int seek = 0;
-//    private PlayerService musicSrv;
-//    private Intent playIntent;
-//    private boolean musicBound=false;
     private View fragmentView;
     private ArrayList<ParcelableTrack> mParcelableTrackArrayList;
     private int mCurrentTrackPosition;
-//    private Thread seekBarThread;
-//    private int seekBarProgress = 0;
-//    PlayerService.PlayerBinder binder;
-//    private ServiceConnection musicConnection = new ServiceConnection() {
-//
-//        @Override
-//        public void onServiceConnected(ComponentName name, IBinder service) {
-//            Log.d("PlayerFragment", "in onServiceConnected");
-//            binder = (PlayerService.PlayerBinder) service;
-//
-//            //get service
-//            musicSrv = binder.getService();
-//            musicBound = true;
-//        }
-//
-//        @Override
-//        public void onServiceDisconnected(ComponentName name) {
-//            musicBound = false;
-//        }
-//    };
+    private boolean isLargeLayout;
 
     public PlayerFragment() {
+    }
+
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        // The only reason you might override this method when using onCreateView() is
+        // to modify any dialog characteristics. For example, the dialog includes a
+        // title by default, but your custom layout might not need it. So here you can
+        // remove the dialog title, but you must call the superclass to get the Dialog.
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        return dialog;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d("PlayerFragment", "in onCreate");
         super.onCreate(savedInstanceState);
-        mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra("allTracks");
+//
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        Log.d("PlayerFragment", "in onCreateView");
+        fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
+        isLargeLayout = getResources().getBoolean(R.bool.large_layout);
+
+        if (isLargeLayout) {
+        mParcelableTrackArrayList = getArguments().getParcelableArrayList("allTracks");
 
         if (savedInstanceState != null) {
             playing = savedInstanceState.getBoolean("playing", false);
@@ -76,26 +79,22 @@ public class PlayerFragment extends Fragment{
             parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
             mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
         } else {
-            parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
-            mCurrentTrackPosition = getActivity().getIntent().getIntExtra("currentTrackPosition", 0);
+            parcelableTrack = getArguments().getParcelable("track");
+            mCurrentTrackPosition = getArguments().getInt("currentTrackPosition", 0);
         }
-//        setRetainInstance(true);
-    }
+        } else {
+            mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra("allTracks");
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-
-//        playIntent = new Intent(getActivity(), PlayerService.class);
-//        getActivity().startService(playIntent);
-//        getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-
-
-        Log.d("PlayerFragment", "in onCreateView");
-        fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
-
-        // populate player layout
-        //pull track parceable
+            if (savedInstanceState != null) {
+                playing = savedInstanceState.getBoolean("playing", false);
+                playingURL = savedInstanceState.getString("playingURL", null);
+                parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
+                mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
+            } else {
+                parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
+                mCurrentTrackPosition = getActivity().getIntent().getIntExtra("currentTrackPosition", 0);
+            }
+        }
 
         //assign artistNames
         TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
@@ -421,6 +420,7 @@ public class PlayerFragment extends Fragment{
             seek = 0;
         }
     };
+
 
 
 
