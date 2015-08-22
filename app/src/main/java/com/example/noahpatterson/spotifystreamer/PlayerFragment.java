@@ -28,7 +28,7 @@ import java.util.Date;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlayerActivityFragment extends Fragment{
+public class PlayerFragment extends Fragment{
 
     private ParcelableTrack parcelableTrack = null;
     private Boolean playing = false;
@@ -47,7 +47,7 @@ public class PlayerActivityFragment extends Fragment{
 //
 //        @Override
 //        public void onServiceConnected(ComponentName name, IBinder service) {
-//            Log.d("PlayerActivityFragment", "in onServiceConnected");
+//            Log.d("PlayerFragment", "in onServiceConnected");
 //            binder = (PlayerService.PlayerBinder) service;
 //
 //            //get service
@@ -61,12 +61,12 @@ public class PlayerActivityFragment extends Fragment{
 //        }
 //    };
 
-    public PlayerActivityFragment() {
+    public PlayerFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d("PlayerActivityFragment", "in onCreate");
+        Log.d("PlayerFragment", "in onCreate");
         super.onCreate(savedInstanceState);
         mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra("allTracks");
 
@@ -91,7 +91,7 @@ public class PlayerActivityFragment extends Fragment{
 //        getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
 
 
-        Log.d("PlayerActivityFragment", "in onCreateView");
+        Log.d("PlayerFragment", "in onCreateView");
         fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
 
         // populate player layout
@@ -274,14 +274,14 @@ public class PlayerActivityFragment extends Fragment{
 
     @Override
     public void onStart() {
-        Log.d("PlayerActivityFragment", "in onStart");
+        Log.d("PlayerFragment", "in onStart");
         super.onStart();
 
     }
 
     @Override
     public void onResume() {
-        Log.d("PlayerActivityFragment", "in onResume");
+        Log.d("PlayerFragment", "in onResume");
         super.onResume();
         IntentFilter currPositionFilter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, currPositionFilter);
@@ -292,7 +292,7 @@ public class PlayerActivityFragment extends Fragment{
 
     @Override
     public void onPause() {
-        Log.d("PlayerActivityFragment", "in onPause");
+        Log.d("PlayerFragment", "in onPause");
         super.onPause();
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(currPositionReciever);
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(playerCompleteReciever);
@@ -300,7 +300,7 @@ public class PlayerActivityFragment extends Fragment{
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        Log.d("PlayerActivityFragment", "in onSaveInstanceState");
+        Log.d("PlayerFragment", "in onSaveInstanceState");
 //        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
 //        Boolean statePressed = false;
 //
@@ -323,7 +323,7 @@ public class PlayerActivityFragment extends Fragment{
 
     @Override
     public void onStop() {
-        Log.d("PlayerActivityFragment", "in onStop");
+        Log.d("PlayerFragment", "in onStop");
 //        if (musicConnection != null) {
 //            getActivity().unbindService(musicConnection);
 //        }
@@ -332,7 +332,7 @@ public class PlayerActivityFragment extends Fragment{
 
     @Override
     public void onDestroy() {
-        Log.d("PlayerActivityFragment", "in onDestroy");
+        Log.d("PlayerFragment", "in onDestroy");
 //        getActivity().unbindService(musicConnection);
         super.onDestroy();
     }
@@ -340,7 +340,7 @@ public class PlayerActivityFragment extends Fragment{
 
 
     public void playTrack(Context context) {
-        Log.d("PlayerActivityFragment", "in playTrack");
+        Log.d("PlayerFragment", "in playTrack");
         ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
 //        if (musicSrv != null) {
 //            musicSrv.setFragmentView(fragmentView);

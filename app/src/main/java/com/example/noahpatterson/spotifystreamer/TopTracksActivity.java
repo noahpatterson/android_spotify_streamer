@@ -3,7 +3,7 @@ package com.example.noahpatterson.spotifystreamer;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-public class TopTracks extends AppCompatActivity {
+public class TopTracksActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

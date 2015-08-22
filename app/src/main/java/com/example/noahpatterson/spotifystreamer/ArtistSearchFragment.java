@@ -1,7 +1,7 @@
 package com.example.noahpatterson.spotifystreamer;
 
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -35,9 +35,23 @@ public class ArtistSearchFragment extends Fragment {
 
     private ArtistsAdapter adapter;
     private ArrayList<ParcelableArtist> mArtistArrayList;
+    private Callbacks mCallbacks = itemSelectedCallback;
 
     public ArtistSearchFragment() {
     }
+
+    public interface Callbacks {
+        /**
+         * Callback for when an item has been selected.
+         */
+        public void onItemSelected(Bundle bundle);
+    }
+
+    private static Callbacks itemSelectedCallback = new Callbacks() {
+        @Override
+        public void onItemSelected(Bundle bundle) {
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -74,18 +88,39 @@ public class ArtistSearchFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ParcelableArtist artist = (ParcelableArtist) artist_search_list_view.getItemAtPosition(position);
-                Intent intent = new Intent(getActivity(), TopTracks.class);
+                Bundle args = new Bundle();
 
-                intent.putExtra("artist_id", artist.id );
-                intent.putExtra("artist_name", artist.name);
-                intent.putExtra("artist_large_image", artist.large_image);
+                args.putString("artist_id", artist.id);
+                args.putString("artist_name", artist.name);
+                args.putString("artist_large_image", artist.large_image);
 
-                startActivity(intent);
+                mCallbacks.onItemSelected(args);
             }
         });
 
         return fragmentView;
     }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        // Activities containing this fragment must implement its callbacks.
+        if (!(activity instanceof Callbacks)) {
+            throw new IllegalStateException("Activity must implement fragment's callbacks.");
+        }
+
+        mCallbacks = (Callbacks) activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+
+        // Reset the active callbacks interface to the dummy implementation.
+        mCallbacks = itemSelectedCallback;
+    }
+
 
     private void bindAdapterToListView(ListView artist_search_list_view) {
         Log.d("artist_search_fragment", "in bindAdapterToListView");

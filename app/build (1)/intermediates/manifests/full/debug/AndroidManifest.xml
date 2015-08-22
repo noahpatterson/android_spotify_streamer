@@ -35,7 +35,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.example.noahpatterson.spotifystreamer.TopTracks"
+            android:name=".TopTracksActivity"
             android:label="@string/title_activity_top_tracks"
             android:parentActivityName="com.example.noahpatterson.spotifystreamer.MainActivity" >
             <meta-data

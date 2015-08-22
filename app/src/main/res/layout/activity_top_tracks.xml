@@ -5,12 +5,19 @@
     android:orientation="vertical"
 
     >
-
-    <fragment
-        android:id="@+id/fragment_top_tracks"
-        android:name="com.example.noahpatterson.spotifystreamer.TopTracksFragment"
+    <FrameLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:layout="@layout/fragment_top_tracks" />
+        tools:context=".TopTracksFragment"
+        android:id="@+id/top_tracks_container">
 
+        <fragment
+            android:id="@+id/fragment_top_tracks"
+            android:name="com.example.noahpatterson.spotifystreamer.TopTracksFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:layout="@layout/fragment_top_tracks" />
+        </FrameLayout>
 </LinearLayout>

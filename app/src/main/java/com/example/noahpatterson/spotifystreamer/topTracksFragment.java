@@ -36,6 +36,10 @@ public class TopTracksFragment extends Fragment {
 
     private TracksAdapter adapter;
     private ArrayList<ParcelableTrack> mArrayOfTracks;
+    private boolean isLargeLayout;
+    private String artistName;
+    private String artistID;
+    private String large_image_url;
 
     public TopTracksFragment() {
     }
@@ -48,6 +52,7 @@ public class TopTracksFragment extends Fragment {
         if (savedInstanceState != null) {
             mArrayOfTracks = savedInstanceState.getParcelableArrayList("saved_top_tracks");
         }
+        isLargeLayout = getResources().getBoolean(R.bool.large_layout);
     }
 
     @Override
@@ -64,20 +69,29 @@ public class TopTracksFragment extends Fragment {
                              Bundle savedInstanceState) {
         Log.d("top_tracks_fragment", "in onCreateView");
         View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
-        Intent artistIntent = getActivity().getIntent();
-        String artistName = artistIntent.getStringExtra("artist_name");
-        String artistID = artistIntent.getStringExtra("artist_id");
 
-        addArtistNameToActionBar(artistName);
+        if (isLargeLayout) {
+            Bundle args = getArguments();
+            artistName = args.getString("artist_name");
+            artistID = args.getString("artist_id");
+            large_image_url = args.getString("artist_large_image");
+        } else {
+            Intent artistIntent = getActivity().getIntent();
+            artistName = artistIntent.getStringExtra("artist_name");
+            artistID = artistIntent.getStringExtra("artist_id");
+            large_image_url = artistIntent.getStringExtra("artist_large_image");
+        }
 
-        createArtistHeroLayout(fragmentView, artistIntent, artistName);
+        addArtistNameToActionBar();
 
-        bindAdapterToListView(fragmentView, artistID);
+        createArtistHeroLayout(fragmentView);
+
+        bindAdapterToListView(fragmentView);
 
         return fragmentView;
     }
 
-    private void bindAdapterToListView(View fragmentView, String artistID) {
+    private void bindAdapterToListView(View fragmentView) {
         if ( mArrayOfTracks == null || mArrayOfTracks.isEmpty()) {
             mArrayOfTracks = new ArrayList<>();
             new FetchTopTracksTask().execute(artistID);
@@ -104,12 +118,11 @@ public class TopTracksFragment extends Fragment {
         });
     }
 
-    private void createArtistHeroLayout(View fragmentView, Intent artistIntent, String artistName) {
+    private void createArtistHeroLayout(View fragmentView) {
         TextView artist_hero_name = (TextView) fragmentView.findViewById(R.id.artist_hero_name);
         artist_hero_name.setText(artistName);
 
         ImageView artist_hero_image = (ImageView) fragmentView.findViewById(R.id.artist_hero_image);
-        String large_image_url = artistIntent.getStringExtra("artist_large_image");
 
         if (TextUtils.isEmpty(large_image_url)) {
             Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(artist_hero_image);
@@ -118,8 +131,14 @@ public class TopTracksFragment extends Fragment {
         }
     }
 
-    private void addArtistNameToActionBar(String artistName) {
-        android.support.v7.app.ActionBar actionBar = ((TopTracks) getActivity()).getSupportActionBar();
+    private void addArtistNameToActionBar() {
+        android.support.v7.app.ActionBar actionBar;
+        if (isLargeLayout) {
+            actionBar = ((MainActivity) getActivity()).getSupportActionBar();
+        } else {
+            actionBar = ((TopTracksActivity) getActivity()).getSupportActionBar();
+        }
+
 
         if (actionBar != null) {
             actionBar.setTitle(artistName + "'s Top Tracks");

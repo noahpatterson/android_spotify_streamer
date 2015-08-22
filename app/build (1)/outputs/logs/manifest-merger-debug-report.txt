@@ -50,7 +50,7 @@ category#android.intent.category.LAUNCHER
 ADDED from AndroidManifest.xml:23:17
 	android:name
 		ADDED from AndroidManifest.xml:23:27
-activity#com.example.noahpatterson.spotifystreamer.TopTracks
+activity#com.example.noahpatterson.spotifystreamer.TopTracksActivity
 ADDED from AndroidManifest.xml:26:9
 	android:label
 		ADDED from AndroidManifest.xml:28:13
