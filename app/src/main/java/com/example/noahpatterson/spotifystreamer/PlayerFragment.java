@@ -323,9 +323,7 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onStop() {
         Log.d("PlayerFragment", "in onStop");
-//        if (musicConnection != null) {
-//            getActivity().unbindService(musicConnection);
-//        }
+
         super.onStop();
     }
 
@@ -341,10 +339,7 @@ public class PlayerFragment extends DialogFragment {
     public void playTrack(Context context) {
         Log.d("PlayerFragment", "in playTrack");
         ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
-//        if (musicSrv != null) {
-//            musicSrv.setFragmentView(fragmentView);
-//        }
-//        ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
+
         Intent intent = new Intent(context, PlayerService.class);
 
         if (playing && parcelableTrack.previewURL.equals(playingURL)) {
@@ -355,14 +350,7 @@ public class PlayerFragment extends DialogFragment {
             button.setImageResource(android.R.drawable.ic_media_play);
             final SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
             seek = seekBar.getProgress();
-
         }
-//        else if (playing == 1) {
-//            //start new track
-//            intent.putExtra("previewURL", parcelableTrack.previewURL);
-//            intent.setAction("com.example.action.PLAY");
-//            getActivity().startService(intent);
-//        }
         else {
             intent.putExtra("previewURL", parcelableTrack.previewURL);
             intent.putExtra("seek", seek);
@@ -371,29 +359,20 @@ public class PlayerFragment extends DialogFragment {
             playingURL = parcelableTrack.previewURL;
             button.setImageResource(android.R.drawable.ic_media_pause);
         }
-//        intent.putExtra("previewUrl", parcelableTrack.previewURL);
-//        if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
-//            button.setImageResource(android.R.drawable.ic_media_play);
-//            intent.setAction("com.example.action.PAUSE");
-////            getActivity().startService(intent);
-//            musicSrv.controlMusic(intent);
-//            playing = false;
-//
-//        } else {
-//            button.setImageResource(android.R.drawable.ic_media_pause);
-//            intent.setAction("com.example.action.PLAY");
-////            getActivity().startService(intent);
-//            musicSrv.controlMusic(intent);
-//            playing = true;
-//
-//        }
     }
 
     private BroadcastReceiver currPositionReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (playingURL == null) {
+                playingURL = intent.getStringExtra("playingURL");
+            }
             if (parcelableTrack.previewURL.equals(playingURL)) {
                 int currPosition = intent.getIntExtra("currPosition", 0);
+
+                ImageButton playButton = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
+                playButton.setImageResource(android.R.drawable.ic_media_pause);
+
                 SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
                 seekBar.setProgress(currPosition);
 
@@ -401,6 +380,7 @@ public class PlayerFragment extends DialogFragment {
                 String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(currPosition));
                 trackTimeTextView.setText(formattedDuration);
                 playing = true;
+
             }
         }
     };

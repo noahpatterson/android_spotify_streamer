@@ -65,6 +65,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 public void run() {
                    Intent currPositionIntent = new Intent(ACTION_CURR_POSITION);
                     currPositionIntent.putExtra("currPosition", mMediaPlayer.getCurrentPosition());
+                    currPositionIntent.putExtra("playingURL", playingURL);
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(currPositionIntent);
                 }
             });
