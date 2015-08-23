@@ -2,6 +2,7 @@ package com.example.noahpatterson.spotifystreamer;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -10,6 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
@@ -213,10 +215,19 @@ public class TopTracksFragment extends Fragment {
         if (isLargeLayout) {
             // The device is using a large layout, so show the fragment as a dialog
             PlayerFragment newFragment = new PlayerFragment();
+
+            // make sure dialog is 50% width minimum
+            // retrieve display dimensions
+            Rect displayRectangle = new Rect();
+            Window window = getActivity().getWindow();
+            window.getDecorView().getWindowVisibleDisplayFrame(displayRectangle);
+
             Bundle bundle = new Bundle();
             bundle.putParcelable("track", parcelableTrack);
             bundle.putParcelableArrayList("allTracks", mArrayOfTracks);
             bundle.putInt("currentTrackPosition", position);
+            bundle.putInt("minWidth", (int)(displayRectangle.width() * 0.9f));
+            bundle.putInt("minHeight", (int)(displayRectangle.height() * 0.9f));
 
             newFragment.setArguments(bundle);
             newFragment.show(getActivity().getFragmentManager(), "dialog");

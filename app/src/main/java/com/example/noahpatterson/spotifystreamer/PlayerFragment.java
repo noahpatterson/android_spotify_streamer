@@ -73,17 +73,19 @@ public class PlayerFragment extends DialogFragment {
         isLargeLayout = getResources().getBoolean(R.bool.large_layout);
 
         if (isLargeLayout) {
-        mParcelableTrackArrayList = getArguments().getParcelableArrayList("allTracks");
+            fragmentView.setMinimumWidth(getArguments().getInt("minWidth"));
+            fragmentView.setMinimumHeight(getArguments().getInt("minHeight"));
+            mParcelableTrackArrayList = getArguments().getParcelableArrayList("allTracks");
 
-        if (savedInstanceState != null) {
-            playing = savedInstanceState.getBoolean("playing", false);
-            playingURL = savedInstanceState.getString("playingURL", null);
-            parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
-            mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
-        } else {
-            parcelableTrack = getArguments().getParcelable("track");
-            mCurrentTrackPosition = getArguments().getInt("currentTrackPosition", 0);
-        }
+            if (savedInstanceState != null) {
+                playing = savedInstanceState.getBoolean("playing", false);
+                playingURL = savedInstanceState.getString("playingURL", null);
+                parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
+                mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
+            } else {
+                parcelableTrack = getArguments().getParcelable("track");
+                mCurrentTrackPosition = getArguments().getInt("currentTrackPosition", 0);
+            }
         } else {
             mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra("allTracks");
 
