@@ -18,18 +18,21 @@ import java.io.IOException;
 import java.util.Random;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
-    private static final String ACTION_PLAY = "com.example.action.PLAY";
-    private static final String ACTION_PAUSE = "com.example.action.PAUSE";
-    private static final String ACTION_RESET = "com.example.action.RESET";
-    private static final String ACTION_SEEK = "com.example.action.SEEK";
     public static final String ACTION_CURR_POSITION = "com.example.action.CURR_POSITION";
     public static final String ACTION_COMPLETE = "com.example.action.CURR_COMPLETE";
-    MediaPlayer mMediaPlayer;
-    String playingURL = null;
+    private MediaPlayer mMediaPlayer;
+    private String playingURL = null;
     private Thread updaterThread;
-    Handler handler;
+    private Handler handler;
     private int seek = 0;
+    private String LOG = "player service";
 
+
+    // Intent String Constants
+    public static final String CURR_TRACK_POSITION = "current_track_position";
+    public static final String PLAYING_URL = "playingURL";
+
+    // this controls updating the seekBar and time while playing
     private void startUpdater() {
         updaterThread = new Thread(new Runnable() {
             @Override
@@ -40,7 +43,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        Log.e("update thread", "Error pausing update thread");
+                        Log.e(LOG, "Error pausing update thread");
                         break;
                     }
                 }
@@ -53,27 +56,28 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         startUpdater();
     }
 
+    // sends a broadcast to the fragment to update seek and track time in real time
     private void notifyUpdate() {
-        Log.d("update thread", "updating seekbar");
+        Log.d(LOG, "updating seekbar");
         if (mMediaPlayer != null) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
                    Intent currPositionIntent = new Intent(ACTION_CURR_POSITION);
-                    currPositionIntent.putExtra("currPosition", mMediaPlayer.getCurrentPosition());
-                    currPositionIntent.putExtra("playingURL", playingURL);
+                    currPositionIntent.putExtra(CURR_TRACK_POSITION, mMediaPlayer.getCurrentPosition());
+                    currPositionIntent.putExtra(PLAYING_URL, playingURL);
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(currPositionIntent);
                 }
             });
         }
     }
 
-
+    // random name for the service for logging
     private String name = "PlayerService" + new Random().nextInt();
 
     @Override
     public void onCreate() {
-        Log.d("player service", "in onCreate: " + name);
+        Log.d(LOG, "in onCreate: " + name);
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mMediaPlayer.setOnErrorListener(this);
@@ -81,6 +85,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         mMediaPlayer.setOnCompletionListener(this);
         handler = new Handler();
 
+        // register receivers for the pause, play, and seek actions from the fragment
         IntentFilter playTrackFilter = new IntentFilter(PlayerFragment.ACTION_PLAY_TRACK);
         LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(playTrackReciever, playTrackFilter);
 
@@ -94,21 +99,24 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d("player service", "in onStartCommand: " + name);
-
+        Log.d(LOG, "in onStartCommand: " + name);
+        // moved normal implementation to the broadcast receivers because it seems easier to manipulate
         return 1;
     }
 
     private BroadcastReceiver playTrackReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("player service", "in playTrackReciever");
-            String previewURL = intent.getStringExtra("previewURL");
+            Log.d(LOG, "in playTrackReciever");
+            String previewURL = intent.getStringExtra(PlayerFragment.TRACK_PREVIEW_URL);
+
+            // play request to start an existing track
             if (playingURL != null && playingURL.equals(previewURL)) {
-                mMediaPlayer.seekTo(intent.getIntExtra("seek", 0));
+                mMediaPlayer.seekTo(intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0));
                 notifyStart();
                 mMediaPlayer.start();
             }
+            // otherwise play the newly selected track
             else
             {
                 mMediaPlayer.reset();
@@ -122,23 +130,29 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
                 mMediaPlayer.prepareAsync(); // prepare async to not block main thread
                 playingURL = previewURL;
-                seek = intent.getIntExtra("seek", 0);
+                seek = intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0);
             }
         }
     };
+
+    // receives a pause command from the fragment
     private BroadcastReceiver pauseTrackReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("player service", "in pauseTrackReciever");
+            Log.d(LOG, "in pauseTrackReciever");
             updaterThread.interrupt();
             mMediaPlayer.pause();
         }
     };
+
+    // receives a seek command from the fragment
     private BroadcastReceiver seekTrackReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("player service", "in seekTrackReciever");
-            int seekPosition = intent.getIntExtra("seek_position",0);
+            Log.d(LOG, "in seekTrackReciever");
+            int seekPosition = intent.getIntExtra(PlayerFragment.SEEK_POSITION,0);
+
+            // only seek if there is a player to seek on
             if (mMediaPlayer != null) {
                 mMediaPlayer.seekTo(seekPosition);
             }
@@ -148,7 +162,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     /** Called when MediaPlayer is ready */
     @Override
     public void onPrepared(MediaPlayer player) {
-        Log.d("player service", "in onPrepared: "+ name);
+        Log.d(LOG, "in onPrepared: "+ name);
         player.seekTo(seek);
         notifyStart();
         player.start();
@@ -167,18 +181,19 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-        Log.d("player service", "in onCompletion: "+ name);
+        Log.d(LOG, "in onCompletion: "+ name);
         updaterThread.interrupt();
         playingURL = null;
         mp.reset();
 
+        // send a track completed broadcast to the fragment
         Intent playerComplete = new Intent(ACTION_COMPLETE);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(playerComplete);
     }
 
     @Override
     public void onDestroy() {
-        Log.d("player service", "in onDestroy: "+ name);
+        Log.d(LOG, "in onDestroy: "+ name);
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(playTrackReciever);
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(pauseTrackReciever);
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(seekTrackReciever);

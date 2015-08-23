@@ -8,10 +8,11 @@ import android.util.Log;
 public class MainActivity extends AppCompatActivity implements ArtistSearchFragment.Callbacks {
 
     private boolean largeLayout;
+    private static final String LOG = "main_activity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d("main_activity", "in onCreate");
+        Log.d(LOG, "in onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -21,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements ArtistSearchFragm
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        Log.d("main_activity", "in onRestoreInstanceState");
+        Log.d(LOG, "in onRestoreInstanceState");
     }
 
     @Override
@@ -30,7 +31,6 @@ public class MainActivity extends AppCompatActivity implements ArtistSearchFragm
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail fragment using a
             // fragment transaction.
-
             TopTracksFragment fragment = new TopTracksFragment();
             fragment.setArguments(bundle);
             getSupportFragmentManager().beginTransaction()
@@ -40,12 +40,11 @@ public class MainActivity extends AppCompatActivity implements ArtistSearchFragm
         } else {
             // In single-pane mode, simply start the detail activity
             // for the selected item ID.
-
             Intent intent = new Intent(this, TopTracksActivity.class);
 
-            intent.putExtra("artist_id", bundle.getString("artist_id"));
-            intent.putExtra("artist_name", bundle.getString("artist_name"));
-            intent.putExtra("artist_large_image", bundle.getString("artist_large_image"));
+            intent.putExtra(ArtistSearchFragment.ARTIST_ID, bundle.getString(ArtistSearchFragment.ARTIST_ID));
+            intent.putExtra(ArtistSearchFragment.ARTIST_NAME, bundle.getString(ArtistSearchFragment.ARTIST_NAME));
+            intent.putExtra(ArtistSearchFragment.ARTIST_LARGE_IMAGE, bundle.getString(ArtistSearchFragment.ARTIST_LARGE_IMAGE));
 
             startActivity(intent);
         }

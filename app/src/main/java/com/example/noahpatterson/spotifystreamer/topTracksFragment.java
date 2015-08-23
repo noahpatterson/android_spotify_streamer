@@ -42,26 +42,36 @@ public class TopTracksFragment extends Fragment {
     private String artistID;
     private String large_image_url;
     private TopTracksViewHolder topTracksViewHolder;
+    private static final String LOG = "top_tracks_fragment";
+
+    // Player start intents constants
+    public static final String ALL_TRACKS = "allTracks";
+    public static final String PLAYER_MIN_WIDTH = "minWidth";
+    public static final String PLAYER_MIN_HEIGHT = "minHeight";
+    public static final String CURR_TRACK = "current_selected_track";
+    public static final String CURRENT_TRACK_LIST_POSITION = "current_track_list_position";
+
+    // onSaveInstanceState constants
+    public static final String SAVED_TOP_TRACKS = "saved_top_tracks";
 
     public TopTracksFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d("top_tracks_fragment", "in onCreate");
+        Log.d(LOG, "in onCreate");
         super.onCreate(savedInstanceState);
-//        setRetainInstance(true);
         if (savedInstanceState != null) {
-            mArrayOfTracks = savedInstanceState.getParcelableArrayList("saved_top_tracks");
+            mArrayOfTracks = savedInstanceState.getParcelableArrayList(SAVED_TOP_TRACKS);
         }
         isLargeLayout = getResources().getBoolean(R.bool.large_layout);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        Log.d("top_tracks_fragment", "in onSaveInstanceState");
+        Log.d(LOG, "in onSaveInstanceState");
         if (mArrayOfTracks != null) {
-            outState.putParcelableArrayList("saved_top_tracks", mArrayOfTracks);
+            outState.putParcelableArrayList(SAVED_TOP_TRACKS, mArrayOfTracks);
         }
         super.onSaveInstanceState(outState);
     }
@@ -69,32 +79,35 @@ public class TopTracksFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d("top_tracks_fragment", "in onCreateView");
+        Log.d(LOG, "in onCreateView");
         View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
         topTracksViewHolder = new TopTracksViewHolder(fragmentView);
 
+        // in large layouts we get data from arguments
         if (isLargeLayout) {
             Bundle args = getArguments();
-            artistName = args.getString("artist_name");
-            artistID = args.getString("artist_id");
-            large_image_url = args.getString("artist_large_image");
+            artistName = args.getString(ArtistSearchFragment.ARTIST_NAME);
+            artistID = args.getString(ArtistSearchFragment.ARTIST_ID);
+            large_image_url = args.getString(ArtistSearchFragment.ARTIST_LARGE_IMAGE);
+
+        // otherwise we get it from an intent
         } else {
             Intent artistIntent = getActivity().getIntent();
-            artistName = artistIntent.getStringExtra("artist_name");
-            artistID = artistIntent.getStringExtra("artist_id");
-            large_image_url = artistIntent.getStringExtra("artist_large_image");
+            artistName = artistIntent.getStringExtra(ArtistSearchFragment.ARTIST_NAME);
+            artistID = artistIntent.getStringExtra(ArtistSearchFragment.ARTIST_ID);
+            large_image_url = artistIntent.getStringExtra(ArtistSearchFragment.ARTIST_LARGE_IMAGE);
         }
 
         addArtistNameToActionBar();
 
         createArtistHeroLayout(fragmentView);
 
-        bindAdapterToListView(fragmentView);
+        bindAdapterToListView();
 
         return fragmentView;
     }
 
-    private void bindAdapterToListView(View fragmentView) {
+    private void bindAdapterToListView() {
         if ( mArrayOfTracks == null || mArrayOfTracks.isEmpty()) {
             mArrayOfTracks = new ArrayList<>();
             new FetchTopTracksTask().execute(artistID);
@@ -109,11 +122,14 @@ public class TopTracksFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ParcelableTrack parcelableTrack = (ParcelableTrack) parent.getItemAtPosition(position);
+
+                // shows a dialog or a embedded fragment
                 showDialog(parcelableTrack, position);
             }
         });
     }
 
+    // populates the Hero image in topTracks view
     private void createArtistHeroLayout(View fragmentView) {
         topTracksViewHolder.artist_hero_name.setText(artistName);
 
@@ -132,9 +148,8 @@ public class TopTracksFragment extends Fragment {
             actionBar = ((TopTracksActivity) getActivity()).getSupportActionBar();
         }
 
-
         if (actionBar != null) {
-            actionBar.setTitle(artistName + "'s Top Tracks");
+            actionBar.setTitle(artistName + R.string.artists_name_in_action_bar);
         }
     }
 
@@ -175,11 +190,11 @@ public class TopTracksFragment extends Fragment {
 
             try {
                 Map<String,Object> queryCountry = new android.support.v4.util.ArrayMap<>(1);
-                queryCountry.put("country","US");
+                queryCountry.put("country",R.string.country_for_query);
                 return spotify.getArtistTopTrack(params[0], queryCountry).tracks;
             } catch (RetrofitError e) {
                 topTracksError = e;
-                return new ArrayList<Track>();
+                return new ArrayList<>();
                 }
             }
 
@@ -211,6 +226,7 @@ public class TopTracksFragment extends Fragment {
         }
     }
 
+    // determines whether to show a dialog -> Tablet or embedd the fragment -> phone
     public void showDialog(ParcelableTrack parcelableTrack, int position) {
         if (isLargeLayout) {
             // The device is using a large layout, so show the fragment as a dialog
@@ -223,20 +239,21 @@ public class TopTracksFragment extends Fragment {
             window.getDecorView().getWindowVisibleDisplayFrame(displayRectangle);
 
             Bundle bundle = new Bundle();
-            bundle.putParcelable("track", parcelableTrack);
-            bundle.putParcelableArrayList("allTracks", mArrayOfTracks);
-            bundle.putInt("currentTrackPosition", position);
-            bundle.putInt("minWidth", (int)(displayRectangle.width() * 0.9f));
-            bundle.putInt("minHeight", (int)(displayRectangle.height() * 0.9f));
+            bundle.putParcelable(CURR_TRACK, parcelableTrack);
+            bundle.putParcelableArrayList(ALL_TRACKS, mArrayOfTracks);
+            bundle.putInt(CURRENT_TRACK_LIST_POSITION, position);
+            bundle.putInt(PLAYER_MIN_WIDTH, (int)(displayRectangle.width() * 0.9f));
+            bundle.putInt(PLAYER_MIN_HEIGHT, (int)(displayRectangle.height() * 0.9f));
+
 
             newFragment.setArguments(bundle);
             newFragment.show(getActivity().getFragmentManager(), "dialog");
         } else {
             Intent playerIntent = new Intent(getActivity(), PlayerActivity.class);
 
-            playerIntent.putExtra("track", parcelableTrack);
-            playerIntent.putExtra("allTracks", mArrayOfTracks);
-            playerIntent.putExtra("currentTrackPosition", position);
+            playerIntent.putExtra(CURR_TRACK, parcelableTrack);
+            playerIntent.putExtra(ALL_TRACKS, mArrayOfTracks);
+            playerIntent.putExtra(CURRENT_TRACK_LIST_POSITION, position);
 
             startActivity(playerIntent);
         }

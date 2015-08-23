@@ -11,22 +11,6 @@ public class PlayerActivity extends AppCompatActivity {
         Log.d("playerActivity", "in onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-
-//        if (getSupportFragmentManager().findFragmentByTag("player") == null) {
-//            PlayerFragment fragment = new PlayerFragment();
-//
-//            Bundle bundle = new Bundle();
-//            bundle.putParcelable("track", getIntent().getParcelableExtra("track"));
-//            bundle.putParcelableArrayList("allTracks", getIntent().getParcelableArrayListExtra("allTracks"));
-//            bundle.putInt("currentTrackPosition", getIntent().getIntExtra("currentTrackPosition", 0));
-//
-//            fragment.setArguments(bundle);
-//            getSupportFragmentManager().beginTransaction()
-//                    .replace(R.id.player_container, fragment)
-//                    .addToBackStack("player")
-//                    .commit();
-//        }
-
     }
 
 }

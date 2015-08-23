@@ -38,6 +38,16 @@ public class ArtistSearchFragment extends Fragment {
     private ArrayList<ParcelableArtist> mArtistArrayList;
     private Callbacks mCallbacks = itemSelectedCallback;
     private int itemSelectedPosition;
+    private final static String LOG = "artist_search_fragment";
+
+    // savedInstanceState constants
+    private final static String SAVED_ARTIST_SEARCH = "saved_artist_search";
+    private final static String SAVED_ITEM_SELECTED_POSITION = "itemSelectedPosition";
+
+    // callback constants
+    public final static String ARTIST_ID = "artist_id";
+    public final static String ARTIST_NAME = "artist_name";
+    public final static String ARTIST_LARGE_IMAGE = "artist_large_image";
 
     public ArtistSearchFragment() {
     }
@@ -46,7 +56,7 @@ public class ArtistSearchFragment extends Fragment {
         /**
          * Callback for when an item has been selected.
          */
-        public void onItemSelected(Bundle bundle);
+        void onItemSelected(Bundle bundle);
     }
 
     private static Callbacks itemSelectedCallback = new Callbacks() {
@@ -57,21 +67,24 @@ public class ArtistSearchFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d("artist_search_fragment", "in onCreate");
+        Log.d(LOG, "in onCreate");
         super.onCreate(savedInstanceState);
-//        setRetainInstance(true);
         if (savedInstanceState != null) {
-            Log.d("artist_search_fragment", "has savedInstanceState");
-            mArtistArrayList = savedInstanceState.getParcelableArrayList("saved_artist_search");
+            Log.d(LOG, "has savedInstanceState");
+
+            // restore saved artist search list
+            mArtistArrayList = savedInstanceState.getParcelableArrayList(SAVED_ARTIST_SEARCH);
         }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        Log.d("artist_search_fragment", "in onSaveInstanceState");
+        Log.d(LOG, "in onSaveInstanceState");
+
+        // save artist seach list and artist selected position
         if (mArtistArrayList != null) {
-            outState.putParcelableArrayList("saved_artist_search", mArtistArrayList);
-            outState.putInt("itemSelectedPosition", itemSelectedPosition);
+            outState.putParcelableArrayList(SAVED_ARTIST_SEARCH, mArtistArrayList);
+            outState.putInt(SAVED_ITEM_SELECTED_POSITION, itemSelectedPosition);
         }
         super.onSaveInstanceState(outState);
     }
@@ -79,17 +92,22 @@ public class ArtistSearchFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d("artist_search_fragment", "in onCreateView");
+        Log.d(LOG, "in onCreateView");
         if (savedInstanceState != null) {
-            itemSelectedPosition = savedInstanceState.getInt("itemSelectedPosition", 0);
+            // restore save artist selected position
+            itemSelectedPosition = savedInstanceState.getInt(SAVED_ITEM_SELECTED_POSITION, 0);
         }
+        // get the fragment view
         View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
+
+        //find the list view
         final ListView artist_search_list_view = (ListView) fragmentView.findViewById(R.id.listview_artist_search);
 
         bindAdapterToListView(artist_search_list_view);
 
         searchForArtist(fragmentView);
 
+        // start callback for top tracks based on selected artist in list
         artist_search_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -97,14 +115,13 @@ public class ArtistSearchFragment extends Fragment {
                 ParcelableArtist artist = (ParcelableArtist) artist_search_list_view.getItemAtPosition(position);
                 Bundle args = new Bundle();
 
-                args.putString("artist_id", artist.id);
-                args.putString("artist_name", artist.name);
-                args.putString("artist_large_image", artist.large_image);
+                args.putString(ARTIST_ID, artist.id);
+                args.putString(ARTIST_NAME, artist.name);
+                args.putString(ARTIST_LARGE_IMAGE, artist.large_image);
 
                 mCallbacks.onItemSelected(args);
             }
         });
-
         return fragmentView;
     }
 
@@ -116,7 +133,6 @@ public class ArtistSearchFragment extends Fragment {
         if (!(activity instanceof Callbacks)) {
             throw new IllegalStateException("Activity must implement fragment's callbacks.");
         }
-
         mCallbacks = (Callbacks) activity;
     }
 
@@ -124,13 +140,14 @@ public class ArtistSearchFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
 
-        // Reset the active callbacks interface to the dummy implementation.
+        // set the callback to the itemSelected function
         mCallbacks = itemSelectedCallback;
     }
 
-
     private void bindAdapterToListView(ListView artist_search_list_view) {
-        Log.d("artist_search_fragment", "in bindAdapterToListView");
+        Log.d(LOG, "in bindAdapterToListView");
+        // if we haven't previously searched or restored an artist,
+        //   create a new list to use
         if ( mArtistArrayList == null || mArtistArrayList.isEmpty()) {
             mArtistArrayList = new ArrayList<>();
         }
@@ -150,10 +167,12 @@ public class ArtistSearchFragment extends Fragment {
         public View getView(int position, View convertView, ViewGroup parent) {
             ParcelableArtist artist = getItem(position);
 
-
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist_search, parent, false);
             }
+
+            //use a viewholder for artist searches
+            //TODO: not sure this saves anything
             ArtistsAdapterViewHolder viewHolder = new ArtistsAdapterViewHolder(convertView);
 
             if (artist.small_image == null) {
@@ -168,7 +187,9 @@ public class ArtistSearchFragment extends Fragment {
     }
 
     private void searchForArtist(View view) {
-        Log.d("artist_search_fragment", "in searchForArtist");
+        Log.d(LOG, "in searchForArtist");
+        
+        //TODO: should these be moved to an earlier call or a viewholder
         EditText inputText = (EditText) view.findViewById(R.id.search_input);
         final ListView listView = (ListView) view.findViewById(R.id.listview_artist_search);
         inputText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -177,9 +198,12 @@ public class ArtistSearchFragment extends Fragment {
                 String artistToSearch = v.getText().toString();
                 listView.setItemChecked(-1, true);
                 if (actionId == EditorInfo.IME_ACTION_SEARCH && !artistToSearch.isEmpty()) {
+
+                    // closes the soft keyboard
                     v.clearFocus();
                     InputMethodManager in = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
                     in.hideSoftInputFromWindow(v.getWindowToken(), 0);
+
                     new FetchArtistsTask().execute(artistToSearch);
                     return true;
                 }
@@ -201,7 +225,7 @@ public class ArtistSearchFragment extends Fragment {
                 return (ArrayList<Artist>) results.artists.items;
             } catch (RetrofitError e) {
                 artistSearchError = e;
-                List<Artist> emptyArtistList = new ArrayList<Artist>();
+                List<Artist> emptyArtistList = new ArrayList<>();
                 return (ArrayList<Artist>) emptyArtistList;
             }
         }

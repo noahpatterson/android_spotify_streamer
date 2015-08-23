@@ -30,7 +30,6 @@ import java.util.Date;
  * A placeholder fragment containing a simple view.
  */
 public class PlayerFragment extends DialogFragment {
-
     private ParcelableTrack parcelableTrack = null;
     private Boolean playing = false;
     private String playingURL;
@@ -38,23 +37,29 @@ public class PlayerFragment extends DialogFragment {
     private View fragmentView;
     private ArrayList<ParcelableTrack> mParcelableTrackArrayList;
     private int mCurrentTrackPosition;
-    private boolean isLargeLayout;
     private PlayerViewHolder mPlayerViewHolder;
     private boolean hasService = false;
+    private static final String LOG = "PlayerFragment";
 
+    // Service broacast constants
     public static final String ACTION_PLAY_TRACK = "com.example.noahpatterson.spotifystreamer.PLAY_TRACK";
     public static final String ACTION_PAUSE_TRACK = "com.example.noahpatterson.spotifystreamer.PAUSE_TRACK";
     public static final String ACTION_SEEK_TRACK = "com.example.noahpatterson.spotifystreamer.SEEK_TRACK";
+    public static final String SEEK_POSITION = "seek_position";
+    public static final String TRACK_PREVIEW_URL = "previewURL";
+
+    // onSaveInstantState constants
+    public static final String PLAYING_URL = "playingURL";
+    public static final String CURR_TRACK = "parcelableTrack";
+    public static final String CURRENT_TRACK_LIST_POSITION = "currentPosition";
+    public static final String IS_PLAYING = "playing";
 
     public PlayerFragment() {
     }
 
+    // removes the titl from the dialog fragment when used as a dialog
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // The only reason you might override this method when using onCreateView() is
-        // to modify any dialog characteristics. For example, the dialog includes a
-        // title by default, but your custom layout might not need it. So here you can
-        // remove the dialog title, but you must call the superclass to get the Dialog.
         Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         return dialog;
@@ -62,60 +67,67 @@ public class PlayerFragment extends DialogFragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d("PlayerFragment", "in onCreate");
+        Log.d(LOG, "in onCreate");
 
+        // here we make sure only to start 1 playerService at a time
         ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+
+            // if the service exists, don't start another one
             if (PlayerService.class.getName().equals(service.service.getClassName())) {
-                Log.d("playerFragment", "service is running");
+                Log.d(LOG, "service is running");
                 hasService = true;
             }
         }
+        // otherwise start a new service
         if (!hasService) {
             Intent startPlayerService = new Intent(getActivity(), PlayerService.class);
             getActivity().startService(startPlayerService);
         }
         super.onCreate(savedInstanceState);
-//
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        Log.d("PlayerFragment", "in onCreateView");
+        Log.d(LOG, "in onCreateView");
         fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
         mPlayerViewHolder = new PlayerViewHolder(fragmentView);
 
-        isLargeLayout = getResources().getBoolean(R.bool.large_layout);
+        boolean isLargeLayout = getResources().getBoolean(R.bool.large_layout);
 
+        // on large layouts we get player data from the fragments arguments
+        //TODO: there is duplication here
         if (isLargeLayout) {
-            fragmentView.setMinimumWidth(getArguments().getInt("minWidth"));
-            fragmentView.setMinimumHeight(getArguments().getInt("minHeight"));
-            mParcelableTrackArrayList = getArguments().getParcelableArrayList("allTracks");
+            // this controls how big the player fragment dialog is
+            fragmentView.setMinimumWidth(getArguments().getInt(TopTracksFragment.PLAYER_MIN_WIDTH));
+            fragmentView.setMinimumHeight(getArguments().getInt(TopTracksFragment.PLAYER_MIN_HEIGHT));
+            mParcelableTrackArrayList = getArguments().getParcelableArrayList(TopTracksFragment.ALL_TRACKS);
 
+            // restore from saved instance if we can
             if (savedInstanceState != null) {
-                playing = savedInstanceState.getBoolean("playing", false);
-                playingURL = savedInstanceState.getString("playingURL", null);
-                parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
-                mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
-                seek = savedInstanceState.getInt("seek");
+                playing = savedInstanceState.getBoolean(IS_PLAYING, false);
+                playingURL = savedInstanceState.getString(PLAYING_URL, null);
+                parcelableTrack = savedInstanceState.getParcelable(CURR_TRACK);
+                mCurrentTrackPosition = savedInstanceState.getInt(CURRENT_TRACK_LIST_POSITION);
+                seek = savedInstanceState.getInt(SEEK_POSITION);
             } else {
-                parcelableTrack = getArguments().getParcelable("track");
-                mCurrentTrackPosition = getArguments().getInt("currentTrackPosition", 0);
+                parcelableTrack = getArguments().getParcelable(TopTracksFragment.CURR_TRACK);
+                mCurrentTrackPosition = getArguments().getInt(TopTracksFragment.CURRENT_TRACK_LIST_POSITION, 0);
             }
         } else {
-            mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra("allTracks");
+            // for phone views we get player data from an intent
+            mParcelableTrackArrayList = getActivity().getIntent().getParcelableArrayListExtra(TopTracksFragment.ALL_TRACKS);
 
             if (savedInstanceState != null) {
-                playing = savedInstanceState.getBoolean("playing", false);
-                playingURL = savedInstanceState.getString("playingURL", null);
-                parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
-                mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
-                seek = savedInstanceState.getInt("seek");
+                playing = savedInstanceState.getBoolean(IS_PLAYING, false);
+                playingURL = savedInstanceState.getString(PLAYING_URL, null);
+                parcelableTrack = savedInstanceState.getParcelable(CURR_TRACK);
+                mCurrentTrackPosition = savedInstanceState.getInt(CURRENT_TRACK_LIST_POSITION);
+                seek = savedInstanceState.getInt(SEEK_POSITION);
             } else {
-                parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
-                mCurrentTrackPosition = getActivity().getIntent().getIntExtra("currentTrackPosition", 0);
+                parcelableTrack = getActivity().getIntent().getParcelableExtra(TopTracksFragment.CURR_TRACK);
+                mCurrentTrackPosition = getActivity().getIntent().getIntExtra(TopTracksFragment.CURRENT_TRACK_LIST_POSITION, 0);
             }
         }
 
@@ -125,12 +137,14 @@ public class PlayerFragment extends DialogFragment {
         //assign trackDuration
         //TODO: this should really be the preview track length, possibly obtained from mediaPlayer
 
-        // set playbutton click listener
+        // make sure the play button is in the right state
         if (playing) {
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
         } else {
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
         }
+
+        // set playbutton click listener
         mPlayerViewHolder.playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -179,7 +193,8 @@ public class PlayerFragment extends DialogFragment {
         });
 
         //set seekBar change listener
-        //TODO: sync MediaPlayer position to seekbar
+        //assign trackDuration
+        //TODO: this should really be the preview track length, possibly obtained from mediaPlayer
         mPlayerViewHolder.seekBar.setMax(30 * 1000);
         mPlayerViewHolder.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -189,13 +204,14 @@ public class PlayerFragment extends DialogFragment {
                 String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(progress));
                 mPlayerViewHolder.trackTimeTextView.setText(formattedDuration);
 
+                    // if the track is playing we need to tell the playerService to scrub the track
                     if (playing) {
                         Intent intent = new Intent(ACTION_SEEK_TRACK);
-                        intent.putExtra("seek_position", progress);
-//                        intent.setAction("com.example.action.SEEK");
-//                        getActivity().startService(intent);
+                        intent.putExtra(SEEK_POSITION, progress);
                         LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
                     }
+
+                    // store how far we seek
                     seek = progress;
                 }
             }
@@ -208,21 +224,22 @@ public class PlayerFragment extends DialogFragment {
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
-
         return fragmentView;
     }
 
     @Override
     public void onStart() {
-        Log.d("PlayerFragment", "in onStart");
+        Log.d(LOG, "in onStart");
         super.onStart();
 
     }
 
     @Override
     public void onResume() {
-        Log.d("PlayerFragment", "in onResume");
+        Log.d(LOG, "in onResume");
         super.onResume();
+
+        // start our PlayerService receivers
         IntentFilter currPositionFilter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, currPositionFilter);
 
@@ -238,73 +255,86 @@ public class PlayerFragment extends DialogFragment {
 
     @Override
     public void onPause() {
-        Log.d("PlayerFragment", "in onPause");
+        Log.d(LOG, "in onPause");
         super.onPause();
+
+        // trash the playerService receivers
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(currPositionReciever);
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(playerCompleteReciever);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        Log.d("PlayerFragment", "in onSaveInstanceState");
+        Log.d(LOG, "in onSaveInstanceState");
 
-        outState.putBoolean("playing", playing);
+        // save whether the track is playing
+        outState.putBoolean(IS_PLAYING, playing);
+
+        //if we have a track, store it's data
         if (parcelableTrack != null) {
-            outState.putString("playingURL", parcelableTrack.previewURL);
-            outState.putParcelable("parcelableTrack", parcelableTrack);
-            outState.putInt("currentPosition", mCurrentTrackPosition);
-            outState.putInt("seek", seek);
+            outState.putString(PLAYING_URL, parcelableTrack.previewURL);
+            outState.putParcelable(CURR_TRACK, parcelableTrack);
+            outState.putInt(CURRENT_TRACK_LIST_POSITION, mCurrentTrackPosition);
+            outState.putInt(SEEK_POSITION, seek);
         }
         super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onStop() {
-        Log.d("PlayerFragment", "in onStop");
-
+        Log.d(LOG, "in onStop");
         super.onStop();
     }
 
     @Override
     public void onDestroy() {
-        Log.d("PlayerFragment", "in onDestroy");
+        Log.d(LOG, "in onDestroy");
         super.onDestroy();
     }
 
-
-
     public void playTrack(Context context) {
-        Log.d("PlayerFragment", "in playTrack");
+        Log.d(LOG, "in playTrack");
+
+        // if playing and the current selected track's URL matches the PlayingURL we pause the track
         if (playing && parcelableTrack.previewURL.equals(playingURL)) {
+
             //pause command
             Intent intent = new Intent(ACTION_PAUSE_TRACK);
-//            intent.setAction("com.example.action.PAUSE");
-//            getActivity().startService(intent);
             LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+
+            // we are no longer playing
             playing = false;
+
+            // swap the pause button to play
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
+
+            // store the track's playing position
             seek = mPlayerViewHolder.seekBar.getProgress();
         }
+
+        // otherwise we start the selected track
         else {
             Intent intent = new Intent(ACTION_PLAY_TRACK);
-            intent.putExtra("previewURL", parcelableTrack.previewURL);
-            intent.putExtra("seek", seek);
-//            intent.setAction("com.example.action.PLAY");
-//            getActivity().startService(intent);
+            intent.putExtra(TRACK_PREVIEW_URL, parcelableTrack.previewURL);
+            intent.putExtra(SEEK_POSITION, seek);
             LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             playingURL = parcelableTrack.previewURL;
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
         }
     }
 
+    // receives the currently playing tracks seek position every second and updateas the UI
     private BroadcastReceiver currPositionReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            // PlayerService knows what it is playing so we update the view
             if (playingURL == null) {
-                playingURL = intent.getStringExtra("playingURL");
+                playingURL = intent.getStringExtra(PlayerService.PLAYING_URL);
             }
+
+            // only update the seekbar and trackTime if we're viewing the playing track
             if (parcelableTrack.previewURL.equals(playingURL)) {
-                int currPosition = intent.getIntExtra("currPosition", 0);
+                int currPosition = intent.getIntExtra(PlayerService.CURR_TRACK_POSITION, 0);
 
                 mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
                 mPlayerViewHolder.seekBar.setProgress(currPosition);
@@ -317,6 +347,7 @@ public class PlayerFragment extends DialogFragment {
         }
     };
 
+    // knows when the track is finsihed playing. Resets the player UI
     private BroadcastReceiver playerCompleteReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -328,8 +359,9 @@ public class PlayerFragment extends DialogFragment {
         }
     };
 
+    // populates the player fragments view
     private void populateView() {
-        //assign artistNames
+        //assign artistNames -- sometimes there are more than one artist
         String allArtistNames = "";
         for (String artistName : parcelableTrack.artistNames) {
             allArtistNames += artistName + " ";
