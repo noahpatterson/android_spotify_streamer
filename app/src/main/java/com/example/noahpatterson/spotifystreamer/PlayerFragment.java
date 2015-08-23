@@ -3,6 +3,7 @@ package com.example.noahpatterson.spotifystreamer;
 import android.app.ActivityManager;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -288,18 +289,55 @@ public class PlayerFragment extends DialogFragment {
 
     @Override
     public void onDestroy() {
+<<<<<<< Updated upstream
         Log.d(LOG, "in onDestroy");
+=======
+        Log.d("PlayerFragment", "in onDestroy");
+        NotificationManager mNotificationManager =
+                (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(PlayerService.NOTIFICATION_ID);
+>>>>>>> Stashed changes
         super.onDestroy();
     }
 
     public void playTrack(Context context) {
+<<<<<<< Updated upstream
         Log.d(LOG, "in playTrack");
 
         // if playing and the current selected track's URL matches the PlayingURL we pause the track
+=======
+        Log.d("PlayerFragment", "in playTrack");
+        //find prev and next tracks
+//        ParcelableTrack nextTrack;
+//        ParcelableTrack previousTrack;
+//        if (mCurrentTrackPosition == 0) {
+//            previousTrack = null;
+//        } else {
+//            previousTrack = mParcelableTrackArrayList.get(mCurrentTrackPosition - 1);
+//        }
+//        if (mCurrentTrackPosition == mParcelableTrackArrayList.size() -1) {
+//            nextTrack = null;
+//        } else {
+//            nextTrack = mParcelableTrackArrayList.get(mCurrentTrackPosition + 1);
+//        }
+>>>>>>> Stashed changes
         if (playing && parcelableTrack.previewURL.equals(playingURL)) {
 
             //pause command
             Intent intent = new Intent(ACTION_PAUSE_TRACK);
+<<<<<<< Updated upstream
+=======
+            intent.putExtra("playingTrack", parcelableTrack);
+
+            //send previous and next tracks
+//            intent.putExtra("previousTrack", previousTrack);
+//            intent.putExtra("nextTrack", nextTrack);
+            intent.putExtra("trackListPosition", mCurrentTrackPosition);
+            intent.putExtra("arrayListTracks", mParcelableTrackArrayList);
+
+//            intent.setAction("com.example.action.PAUSE");
+//            getActivity().startService(intent);
+>>>>>>> Stashed changes
             LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
 
             // we are no longer playing
@@ -315,8 +353,23 @@ public class PlayerFragment extends DialogFragment {
         // otherwise we start the selected track
         else {
             Intent intent = new Intent(ACTION_PLAY_TRACK);
+<<<<<<< Updated upstream
             intent.putExtra(TRACK_PREVIEW_URL, parcelableTrack.previewURL);
             intent.putExtra(SEEK_POSITION, seek);
+=======
+            intent.putExtra("previewURL", parcelableTrack.previewURL);
+            intent.putExtra("seek", seek);
+            intent.putExtra("playingTrack", parcelableTrack);
+
+            //send previous and next tracks
+//            intent.putExtra("previousTrack", previousTrack);
+//            intent.putExtra("nextTrack", nextTrack);
+            intent.putExtra("trackListPosition", mCurrentTrackPosition);
+            intent.putExtra("arrayListTracks", mParcelableTrackArrayList);
+
+//            intent.setAction("com.example.action.PLAY");
+//            getActivity().startService(intent);
+>>>>>>> Stashed changes
             LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             playingURL = parcelableTrack.previewURL;
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);

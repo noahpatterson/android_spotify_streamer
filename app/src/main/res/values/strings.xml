@@ -11,6 +11,6 @@
     <string name="end_of_top_tracks_list">Sorry, there are no more top tracks.</string>
 
     <!-- TopTrackFragment -->
-    <string name="artists_name_in_action_bar">'s Top Tracks</string>
+    <string name="artists_name_in_action_bar">\'s Top Tracks</string>
     <string name="country_for_query">US</string>
 </resources>
