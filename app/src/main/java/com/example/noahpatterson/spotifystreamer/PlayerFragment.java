@@ -1,12 +1,12 @@
 package com.example.noahpatterson.spotifystreamer;
 
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.app.DialogFragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -14,13 +14,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.noahpatterson.spotifystreamer.service.PlayerService;
+import com.example.noahpatterson.spotifystreamer.view_holder.PlayerViewHolder;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -40,6 +39,7 @@ public class PlayerFragment extends DialogFragment {
     private ArrayList<ParcelableTrack> mParcelableTrackArrayList;
     private int mCurrentTrackPosition;
     private boolean isLargeLayout;
+    private PlayerViewHolder mPlayerViewHolder;
 
     public PlayerFragment() {
     }
@@ -68,6 +68,8 @@ public class PlayerFragment extends DialogFragment {
 
         Log.d("PlayerFragment", "in onCreateView");
         fragmentView = inflater.inflate(R.layout.fragment_player, container, false);
+        mPlayerViewHolder = new PlayerViewHolder(fragmentView);
+
         isLargeLayout = getResources().getBoolean(R.bool.large_layout);
 
         if (isLargeLayout) {
@@ -96,25 +98,8 @@ public class PlayerFragment extends DialogFragment {
             }
         }
 
-        //assign artistNames
-        TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
-        String allArtistNames = "";
-        for (String artistName : parcelableTrack.artistNames) {
-            allArtistNames += artistName + " ";
-        }
-        artistNameTextView.setText(allArtistNames);
-
-        //assign albumName
-        TextView albumNameTextView = (TextView) fragmentView.findViewById(R.id.playerAlbumName);
-        albumNameTextView.setText(parcelableTrack.albumName);
-
-        //assign albumImage
-        ImageView albumImageImageView = (ImageView) fragmentView.findViewById(R.id.playerAlbumImage);
-        if (TextUtils.isEmpty(parcelableTrack.albumImage)) {
-            Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(albumImageImageView);
-        } else {
-            Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(albumImageImageView);
-        }
+        // add data to view
+        populateView();
 
         //assign trackDurationc
         TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
@@ -122,25 +107,14 @@ public class PlayerFragment extends DialogFragment {
 
         //assign trackDuration
         //TODO: this should really be the preview track length, possibly obtained from mediaPlayer
-//        TextView trackDurationTextView = (TextView) fragmentView.findViewById(R.id.playerTotalTrackTime);
-//        String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(parcelableTrack.duration));
-//        trackDurationTextView.setText(formattedDuration);
 
         // set playbutton click listener
-        final ImageButton playButton = (ImageButton) fragmentView.findViewById(R.id.playerPlayButton);
         if (playing) {
-            playButton.setImageResource(android.R.drawable.ic_media_pause);
+            mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
         } else {
-            playButton.setImageResource(android.R.drawable.ic_media_play);
+            mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
         }
-//        if (musicSrv == null && playing) {
-//            playButton.setImageResource(android.R.drawable.ic_media_pause);
-//        } else if (musicSrv != null && musicSrv.getMediaPlayer().isPlaying()) {
-//            playButton.setImageResource(android.R.drawable.ic_media_pause);
-//        } else {
-//            playButton.setImageResource(android.R.drawable.ic_media_play);
-//        }
-        playButton.setOnClickListener(new View.OnClickListener() {
+        mPlayerViewHolder.playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 playTrack(fragmentView.getContext());
@@ -148,8 +122,7 @@ public class PlayerFragment extends DialogFragment {
         });
 
         //next track
-        final ImageButton nextTrackButton = (ImageButton) fragmentView.findViewById(R.id.playerNextButton);
-        nextTrackButton.setOnClickListener(new View.OnClickListener() {
+        mPlayerViewHolder.nextTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mCurrentTrackPosition == mParcelableTrackArrayList.size() -1) {
@@ -157,30 +130,9 @@ public class PlayerFragment extends DialogFragment {
                 } else {
                     parcelableTrack = mParcelableTrackArrayList.get(mCurrentTrackPosition + 1);
                     mCurrentTrackPosition += 1;
-                    //swap track info
-                    //assign artistNames
-                    TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
-                    String allArtistNames = "";
-                    for (String artistName : parcelableTrack.artistNames) {
-                        allArtistNames += artistName + " ";
-                    }
-                    artistNameTextView.setText(allArtistNames);
 
-                    //assign albumName
-                    TextView albumNameTextView = (TextView) fragmentView.findViewById(R.id.playerAlbumName);
-                    albumNameTextView.setText(parcelableTrack.albumName);
-
-                    //assign albumImage
-                    ImageView albumImageImageView = (ImageView) fragmentView.findViewById(R.id.playerAlbumImage);
-                    if (TextUtils.isEmpty(parcelableTrack.albumImage)) {
-                        Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(albumImageImageView);
-                    } else {
-                        Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(albumImageImageView);
-                    }
-
-                    //assign trackDurationc
-                    TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
-                    trackNameTextView.setText(parcelableTrack.name);
+                    // add data to view
+                    populateView();
 
                     //play track
                     seek = 0;
@@ -190,8 +142,7 @@ public class PlayerFragment extends DialogFragment {
         });
 
         //previous track
-        final ImageButton prevTrackButton = (ImageButton) fragmentView.findViewById(R.id.playerPreviousButton);
-        prevTrackButton.setOnClickListener(new View.OnClickListener() {
+        mPlayerViewHolder.prevTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mCurrentTrackPosition == 0) {
@@ -199,30 +150,9 @@ public class PlayerFragment extends DialogFragment {
                 } else {
                     parcelableTrack = mParcelableTrackArrayList.get(mCurrentTrackPosition - 1);
                     mCurrentTrackPosition -= 1;
-                    //swap track info
-                    //assign artistNames
-                    TextView artistNameTextView = (TextView) fragmentView.findViewById(R.id.playerArtistName);
-                    String allArtistNames = "";
-                    for (String artistName : parcelableTrack.artistNames) {
-                        allArtistNames += artistName + " ";
-                    }
-                    artistNameTextView.setText(allArtistNames);
 
-                    //assign albumName
-                    TextView albumNameTextView = (TextView) fragmentView.findViewById(R.id.playerAlbumName);
-                    albumNameTextView.setText(parcelableTrack.albumName);
-
-                    //assign albumImage
-                    ImageView albumImageImageView = (ImageView) fragmentView.findViewById(R.id.playerAlbumImage);
-                    if (TextUtils.isEmpty(parcelableTrack.albumImage)) {
-                        Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(albumImageImageView);
-                    } else {
-                        Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(albumImageImageView);
-                    }
-
-                    //assign trackDurationc
-                    TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
-                    trackNameTextView.setText(parcelableTrack.name);
+                    // add data to view
+                    populateView();
 
                     //play track
                     seek = 0;
@@ -233,23 +163,20 @@ public class PlayerFragment extends DialogFragment {
 
         //set seekBar change listener
         //TODO: sync MediaPlayer position to seekbar
-        final SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-        seekBar.setMax(30 * 1000);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        mPlayerViewHolder.seekBar.setMax(30 * 1000);
+        mPlayerViewHolder.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
 
-                    final TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
                 String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(progress));
-                trackTimeTextView.setText(formattedDuration);
+                mPlayerViewHolder.trackTimeTextView.setText(formattedDuration);
 
                     if (playing) {
                         Intent intent = new Intent(fragmentView.getContext(), PlayerService.class);
                         intent.putExtra("seek_position", progress);
                         intent.setAction("com.example.action.SEEK");
                         getActivity().startService(intent);
-//                    musicSrv.controlMusic(intent);
                     }
                     seek = progress;
                 }
@@ -269,8 +196,6 @@ public class PlayerFragment extends DialogFragment {
         return fragmentView;
     }
 
-
-
     @Override
     public void onStart() {
         Log.d("PlayerFragment", "in onStart");
@@ -284,6 +209,12 @@ public class PlayerFragment extends DialogFragment {
         super.onResume();
         IntentFilter currPositionFilter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, currPositionFilter);
+
+        // play track when view loads if no track is playing
+        // this feature is per the rubric, though personally not auto-playing is better UX
+//        if (!playing) {
+//            playTrack(fragmentView.getContext());
+//        }
 
         IntentFilter playerCompleteFilter = new IntentFilter(PlayerService.ACTION_COMPLETE);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(playerCompleteReciever, playerCompleteFilter);
@@ -338,8 +269,6 @@ public class PlayerFragment extends DialogFragment {
 
     public void playTrack(Context context) {
         Log.d("PlayerFragment", "in playTrack");
-        ImageButton button = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
-
         Intent intent = new Intent(context, PlayerService.class);
 
         if (playing && parcelableTrack.previewURL.equals(playingURL)) {
@@ -347,9 +276,8 @@ public class PlayerFragment extends DialogFragment {
             intent.setAction("com.example.action.PAUSE");
             getActivity().startService(intent);
             playing = false;
-            button.setImageResource(android.R.drawable.ic_media_play);
-            final SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-            seek = seekBar.getProgress();
+            mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
+            seek = mPlayerViewHolder.seekBar.getProgress();
         }
         else {
             intent.putExtra("previewURL", parcelableTrack.previewURL);
@@ -357,7 +285,7 @@ public class PlayerFragment extends DialogFragment {
             intent.setAction("com.example.action.PLAY");
             getActivity().startService(intent);
             playingURL = parcelableTrack.previewURL;
-            button.setImageResource(android.R.drawable.ic_media_pause);
+            mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
         }
     }
 
@@ -370,15 +298,11 @@ public class PlayerFragment extends DialogFragment {
             if (parcelableTrack.previewURL.equals(playingURL)) {
                 int currPosition = intent.getIntExtra("currPosition", 0);
 
-                ImageButton playButton = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
-                playButton.setImageResource(android.R.drawable.ic_media_pause);
+                mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
+                mPlayerViewHolder.seekBar.setProgress(currPosition);
 
-                SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-                seekBar.setProgress(currPosition);
-
-                TextView trackTimeTextView = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
                 String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(currPosition));
-                trackTimeTextView.setText(formattedDuration);
+                mPlayerViewHolder.trackTimeTextView.setText(formattedDuration);
                 playing = true;
 
             }
@@ -388,21 +312,33 @@ public class PlayerFragment extends DialogFragment {
     private BroadcastReceiver playerCompleteReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            ImageButton playButton = (ImageButton)fragmentView.findViewById(R.id.playerPlayButton);
-            playButton.setImageResource(android.R.drawable.ic_media_play);
-
-            SeekBar seekBar = (SeekBar) fragmentView.findViewById(R.id.playerSeekBar);
-            seekBar.setProgress(0);
-
-            TextView trackTime = (TextView) fragmentView.findViewById(R.id.playerCurrentTrackPosition);
-            trackTime.setText("00:00");
+            mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
+            mPlayerViewHolder.seekBar.setProgress(0);
+            mPlayerViewHolder.trackTimeTextView.setText("00:00");
             playing = false;
             seek = 0;
         }
     };
 
+    private void populateView() {
+        //assign artistNames
+        String allArtistNames = "";
+        for (String artistName : parcelableTrack.artistNames) {
+            allArtistNames += artistName + " ";
+        }
+        mPlayerViewHolder.artistNameTextView.setText(allArtistNames);
 
+        //assign albumName
+        mPlayerViewHolder.albumNameTextView.setText(parcelableTrack.albumName);
 
+        //assign albumImage
+        if (TextUtils.isEmpty(parcelableTrack.albumImage)) {
+            Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(mPlayerViewHolder.albumImageImageView);
+        } else {
+            Picasso.with(fragmentView.getContext()).load(parcelableTrack.albumImage).into(mPlayerViewHolder.albumImageImageView);
+        }
 
-
+        //assign trackName
+        mPlayerViewHolder.trackNameTextView.setText(parcelableTrack.name);
+    }
 }

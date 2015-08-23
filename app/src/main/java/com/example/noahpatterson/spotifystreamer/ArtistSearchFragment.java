@@ -14,11 +14,11 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.noahpatterson.spotifystreamer.view_holder.ArtistsAdapterViewHolder;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -143,21 +143,19 @@ public class ArtistSearchFragment extends Fragment {
         public View getView(int position, View convertView, ViewGroup parent) {
             ParcelableArtist artist = getItem(position);
 
+
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist_search, parent, false);
             }
-
-            ImageView artistImage = (ImageView) convertView.findViewById(R.id.artist_search_artist_image);
-            TextView artistName = (TextView) convertView.findViewById(R.id.artist_search_artist_name);
+            ArtistsAdapterViewHolder viewHolder = new ArtistsAdapterViewHolder(convertView);
 
             if (artist.small_image == null) {
-                Picasso.with(convertView.getContext()).load(R.drawable.no_artist).into(artistImage);
+                Picasso.with(convertView.getContext()).load(R.drawable.no_artist).into(viewHolder.artistImage);
             } else {
-                Picasso.with(convertView.getContext()).load(artist.small_image).into(artistImage);
+                Picasso.with(convertView.getContext()).load(artist.small_image).into(viewHolder.artistImage);
            }
 
-            artistName.setText(artist.name);
-
+            viewHolder.artistName.setText(artist.name);
             return convertView;
         }
     }

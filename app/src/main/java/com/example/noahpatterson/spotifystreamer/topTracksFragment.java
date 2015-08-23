@@ -12,11 +12,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.noahpatterson.spotifystreamer.view_holder.TopTracksAdapterViewHolder;
+import com.example.noahpatterson.spotifystreamer.view_holder.TopTracksViewHolder;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -40,6 +39,7 @@ public class TopTracksFragment extends Fragment {
     private String artistName;
     private String artistID;
     private String large_image_url;
+    private TopTracksViewHolder topTracksViewHolder;
 
     public TopTracksFragment() {
     }
@@ -69,6 +69,7 @@ public class TopTracksFragment extends Fragment {
                              Bundle savedInstanceState) {
         Log.d("top_tracks_fragment", "in onCreateView");
         View fragmentView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
+        topTracksViewHolder = new TopTracksViewHolder(fragmentView);
 
         if (isLargeLayout) {
             Bundle args = getArguments();
@@ -99,11 +100,10 @@ public class TopTracksFragment extends Fragment {
 
         adapter = new TracksAdapter(getActivity(), mArrayOfTracks);
 
-        ListView top_tracks_list_view = (ListView) fragmentView.findViewById(R.id.listview_top_tracks);
-        top_tracks_list_view.setAdapter(adapter);
+        topTracksViewHolder.top_tracks_list_view.setAdapter(adapter);
 
         // create list view item click listener
-        top_tracks_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        topTracksViewHolder.top_tracks_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ParcelableTrack parcelableTrack = (ParcelableTrack) parent.getItemAtPosition(position);
@@ -113,15 +113,12 @@ public class TopTracksFragment extends Fragment {
     }
 
     private void createArtistHeroLayout(View fragmentView) {
-        TextView artist_hero_name = (TextView) fragmentView.findViewById(R.id.artist_hero_name);
-        artist_hero_name.setText(artistName);
-
-        ImageView artist_hero_image = (ImageView) fragmentView.findViewById(R.id.artist_hero_image);
+        topTracksViewHolder.artist_hero_name.setText(artistName);
 
         if (TextUtils.isEmpty(large_image_url)) {
-            Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(artist_hero_image);
+            Picasso.with(fragmentView.getContext()).load(R.drawable.noalbum).into(topTracksViewHolder.artist_hero_image);
         } else {
-            Picasso.with(fragmentView.getContext()).load(large_image_url).into(artist_hero_image);
+            Picasso.with(fragmentView.getContext()).load(large_image_url).into(topTracksViewHolder.artist_hero_image);
         }
     }
 
@@ -152,19 +149,16 @@ public class TopTracksFragment extends Fragment {
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_top_tracks, parent, false);
             }
-
-            ImageView albumImage = (ImageView) convertView.findViewById(R.id.top_tracks_album_image);
-            TextView trackName = (TextView) convertView.findViewById(R.id.top_tracks_song_name);
-            TextView albumName = (TextView) convertView.findViewById(R.id.top_tracks_album_name);
+            TopTracksAdapterViewHolder viewHolder = new TopTracksAdapterViewHolder(convertView);
 
             if (track.albumImage == null) {
-                Picasso.with(convertView.getContext()).load(R.drawable.noalbum).into(albumImage);
+                Picasso.with(convertView.getContext()).load(R.drawable.noalbum).into(viewHolder.albumImage);
             } else {
-                Picasso.with(convertView.getContext()).load(track.albumImage).into(albumImage);
+                Picasso.with(convertView.getContext()).load(track.albumImage).into(viewHolder.albumImage);
             }
 
-            trackName.setText(track.name);
-            albumName.setText(track.albumName);
+            viewHolder.trackName.setText(track.name);
+            viewHolder.albumName.setText(track.albumName);
 
             return convertView;
         }
@@ -234,10 +228,6 @@ public class TopTracksFragment extends Fragment {
             playerIntent.putExtra("currentTrackPosition", position);
 
             startActivity(playerIntent);
-
-
-
-
         }
     }
 }
