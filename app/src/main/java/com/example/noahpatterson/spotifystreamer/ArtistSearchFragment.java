@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -169,16 +170,21 @@ public class ArtistSearchFragment extends Fragment {
     private void searchForArtist(View view) {
         Log.d("artist_search_fragment", "in searchForArtist");
         EditText inputText = (EditText) view.findViewById(R.id.search_input);
+        final ListView listView = (ListView) view.findViewById(R.id.listview_artist_search);
         inputText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 String artistToSearch = v.getText().toString();
+                listView.setItemChecked(-1, true);
                 if (actionId == EditorInfo.IME_ACTION_SEARCH && !artistToSearch.isEmpty()) {
+                    v.clearFocus();
+                    InputMethodManager in = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    in.hideSoftInputFromWindow(v.getWindowToken(), 0);
                     new FetchArtistsTask().execute(artistToSearch);
                     return true;
                 }
                 Toast.makeText(getActivity().getApplicationContext(), R.string.blank_artist_name, Toast.LENGTH_LONG).show();
-                return true;
+                return false;
             }
         });
     }
