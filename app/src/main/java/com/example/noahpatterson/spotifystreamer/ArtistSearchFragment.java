@@ -36,6 +36,7 @@ public class ArtistSearchFragment extends Fragment {
     private ArtistsAdapter adapter;
     private ArrayList<ParcelableArtist> mArtistArrayList;
     private Callbacks mCallbacks = itemSelectedCallback;
+    private int itemSelectedPosition;
 
     public ArtistSearchFragment() {
     }
@@ -69,6 +70,7 @@ public class ArtistSearchFragment extends Fragment {
         Log.d("artist_search_fragment", "in onSaveInstanceState");
         if (mArtistArrayList != null) {
             outState.putParcelableArrayList("saved_artist_search", mArtistArrayList);
+            outState.putInt("itemSelectedPosition", itemSelectedPosition);
         }
         super.onSaveInstanceState(outState);
     }
@@ -77,6 +79,9 @@ public class ArtistSearchFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         Log.d("artist_search_fragment", "in onCreateView");
+        if (savedInstanceState != null) {
+            itemSelectedPosition = savedInstanceState.getInt("itemSelectedPosition", 0);
+        }
         View fragmentView = inflater.inflate(R.layout.fragment_main, container, false);
         final ListView artist_search_list_view = (ListView) fragmentView.findViewById(R.id.listview_artist_search);
 
@@ -87,6 +92,7 @@ public class ArtistSearchFragment extends Fragment {
         artist_search_list_view.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                itemSelectedPosition = position;
                 ParcelableArtist artist = (ParcelableArtist) artist_search_list_view.getItemAtPosition(position);
                 Bundle args = new Bundle();
 
