@@ -1,5 +1,6 @@
 package com.example.noahpatterson.spotifystreamer;
 
+import android.app.ActivityManager;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
@@ -15,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.noahpatterson.spotifystreamer.service.PlayerService;
@@ -40,6 +40,11 @@ public class PlayerFragment extends DialogFragment {
     private int mCurrentTrackPosition;
     private boolean isLargeLayout;
     private PlayerViewHolder mPlayerViewHolder;
+    private boolean hasService = false;
+
+    public static final String ACTION_PLAY_TRACK = "com.example.noahpatterson.spotifystreamer.PLAY_TRACK";
+    public static final String ACTION_PAUSE_TRACK = "com.example.noahpatterson.spotifystreamer.PAUSE_TRACK";
+    public static final String ACTION_SEEK_TRACK = "com.example.noahpatterson.spotifystreamer.SEEK_TRACK";
 
     public PlayerFragment() {
     }
@@ -58,6 +63,18 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d("PlayerFragment", "in onCreate");
+
+        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (PlayerService.class.getName().equals(service.service.getClassName())) {
+                Log.d("playerFragment", "service is running");
+                hasService = true;
+            }
+        }
+        if (!hasService) {
+            Intent startPlayerService = new Intent(getActivity(), PlayerService.class);
+            getActivity().startService(startPlayerService);
+        }
         super.onCreate(savedInstanceState);
 //
     }
@@ -82,6 +99,7 @@ public class PlayerFragment extends DialogFragment {
                 playingURL = savedInstanceState.getString("playingURL", null);
                 parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
                 mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
+                seek = savedInstanceState.getInt("seek");
             } else {
                 parcelableTrack = getArguments().getParcelable("track");
                 mCurrentTrackPosition = getArguments().getInt("currentTrackPosition", 0);
@@ -94,6 +112,7 @@ public class PlayerFragment extends DialogFragment {
                 playingURL = savedInstanceState.getString("playingURL", null);
                 parcelableTrack = savedInstanceState.getParcelable("parcelableTrack");
                 mCurrentTrackPosition = savedInstanceState.getInt("currentPosition");
+                seek = savedInstanceState.getInt("seek");
             } else {
                 parcelableTrack = getActivity().getIntent().getParcelableExtra("track");
                 mCurrentTrackPosition = getActivity().getIntent().getIntExtra("currentTrackPosition", 0);
@@ -102,10 +121,6 @@ public class PlayerFragment extends DialogFragment {
 
         // add data to view
         populateView();
-
-        //assign trackDurationc
-        TextView trackNameTextView = (TextView) fragmentView.findViewById(R.id.playerTrackName);
-        trackNameTextView.setText(parcelableTrack.name);
 
         //assign trackDuration
         //TODO: this should really be the preview track length, possibly obtained from mediaPlayer
@@ -175,10 +190,11 @@ public class PlayerFragment extends DialogFragment {
                 mPlayerViewHolder.trackTimeTextView.setText(formattedDuration);
 
                     if (playing) {
-                        Intent intent = new Intent(fragmentView.getContext(), PlayerService.class);
+                        Intent intent = new Intent(ACTION_SEEK_TRACK);
                         intent.putExtra("seek_position", progress);
-                        intent.setAction("com.example.action.SEEK");
-                        getActivity().startService(intent);
+//                        intent.setAction("com.example.action.SEEK");
+//                        getActivity().startService(intent);
+                        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
                     }
                     seek = progress;
                 }
@@ -186,12 +202,10 @@ public class PlayerFragment extends DialogFragment {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
             }
         });
 
@@ -233,22 +247,13 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         Log.d("PlayerFragment", "in onSaveInstanceState");
-//        outState.putBoolean("isPlaying", musicSrv.getMediaPlayer().isPlaying());
-//        Boolean statePressed = false;
-//
-//        int[] states = fragmentView.findViewById(R.id.playerPlayButton).getDrawableState();
-//        for (int state : states)
-//        {
-//            if (state == android.R.attr.state_pressed) {
-//                statePressed = true;
-//            }
-//        }
 
         outState.putBoolean("playing", playing);
         if (parcelableTrack != null) {
             outState.putString("playingURL", parcelableTrack.previewURL);
             outState.putParcelable("parcelableTrack", parcelableTrack);
             outState.putInt("currentPosition", mCurrentTrackPosition);
+            outState.putInt("seek", seek);
         }
         super.onSaveInstanceState(outState);
     }
@@ -263,7 +268,6 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onDestroy() {
         Log.d("PlayerFragment", "in onDestroy");
-//        getActivity().unbindService(musicConnection);
         super.onDestroy();
     }
 
@@ -271,21 +275,23 @@ public class PlayerFragment extends DialogFragment {
 
     public void playTrack(Context context) {
         Log.d("PlayerFragment", "in playTrack");
-        Intent intent = new Intent(context, PlayerService.class);
-
         if (playing && parcelableTrack.previewURL.equals(playingURL)) {
             //pause command
-            intent.setAction("com.example.action.PAUSE");
-            getActivity().startService(intent);
+            Intent intent = new Intent(ACTION_PAUSE_TRACK);
+//            intent.setAction("com.example.action.PAUSE");
+//            getActivity().startService(intent);
+            LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             playing = false;
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
             seek = mPlayerViewHolder.seekBar.getProgress();
         }
         else {
+            Intent intent = new Intent(ACTION_PLAY_TRACK);
             intent.putExtra("previewURL", parcelableTrack.previewURL);
             intent.putExtra("seek", seek);
-            intent.setAction("com.example.action.PLAY");
-            getActivity().startService(intent);
+//            intent.setAction("com.example.action.PLAY");
+//            getActivity().startService(intent);
+            LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             playingURL = parcelableTrack.previewURL;
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_pause);
         }
@@ -342,5 +348,9 @@ public class PlayerFragment extends DialogFragment {
 
         //assign trackName
         mPlayerViewHolder.trackNameTextView.setText(parcelableTrack.name);
+
+        //set track time
+        String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(seek));
+        mPlayerViewHolder.trackTimeTextView.setText(formattedDuration);
     }
 }
