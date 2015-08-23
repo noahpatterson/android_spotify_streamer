@@ -328,9 +328,9 @@ public class PlayerFragment extends DialogFragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             // PlayerService knows what it is playing so we update the view
-            if (playingURL == null) {
+//            if (playingURL == null) {
                 playingURL = intent.getStringExtra(PlayerService.PLAYING_URL);
-            }
+//            }
 
             // only update the seekbar and trackTime if we're viewing the playing track
             if (parcelableTrack.previewURL.equals(playingURL)) {

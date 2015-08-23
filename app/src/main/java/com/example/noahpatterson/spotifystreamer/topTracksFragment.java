@@ -149,7 +149,7 @@ public class TopTracksFragment extends Fragment {
         }
 
         if (actionBar != null) {
-            actionBar.setTitle(artistName + R.string.artists_name_in_action_bar);
+            actionBar.setTitle(artistName + "'s Top Tracks");
         }
     }
 
@@ -190,7 +190,7 @@ public class TopTracksFragment extends Fragment {
 
             try {
                 Map<String,Object> queryCountry = new android.support.v4.util.ArrayMap<>(1);
-                queryCountry.put("country",R.string.country_for_query);
+                queryCountry.put("country","US");
                 return spotify.getArtistTopTrack(params[0], queryCountry).tracks;
             } catch (RetrofitError e) {
                 topTracksError = e;
