@@ -57,7 +57,7 @@ public class PlayerFragment extends DialogFragment {
     public PlayerFragment() {
     }
 
-    // removes the titl from the dialog fragment when used as a dialog
+    // removes the title from the dialog fragment when used as a dialog
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = super.onCreateDialog(savedInstanceState);
@@ -69,21 +69,7 @@ public class PlayerFragment extends DialogFragment {
     public void onCreate(Bundle savedInstanceState) {
         Log.d(LOG, "in onCreate");
 
-        // here we make sure only to start 1 playerService at a time
-        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
 
-            // if the service exists, don't start another one
-            if (PlayerService.class.getName().equals(service.service.getClassName())) {
-                Log.d(LOG, "service is running");
-                hasService = true;
-            }
-        }
-        // otherwise start a new service
-        if (!hasService) {
-            Intent startPlayerService = new Intent(getActivity(), PlayerService.class);
-            getActivity().startService(startPlayerService);
-        }
         super.onCreate(savedInstanceState);
     }
 
@@ -130,6 +116,22 @@ public class PlayerFragment extends DialogFragment {
                 mCurrentTrackPosition = getActivity().getIntent().getIntExtra(TopTracksFragment.CURRENT_TRACK_LIST_POSITION, 0);
             }
         }
+        // here we make sure only to start 1 playerService at a time
+        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+
+            // if the service exists, don't start another one
+            if (PlayerService.class.getName().equals(service.service.getClassName())) {
+                Log.d(LOG, "service is running");
+                hasService = true;
+            }
+        }
+        // otherwise start a new service
+        if (!hasService) {
+            Intent startPlayerService = new Intent(getActivity(), PlayerService.class);
+            startPlayerService.putExtra(TRACK_PREVIEW_URL, parcelableTrack.previewURL);
+            getActivity().startService(startPlayerService);
+        }
 
         // add data to view
         populateView();
@@ -148,7 +150,7 @@ public class PlayerFragment extends DialogFragment {
         mPlayerViewHolder.playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                playTrack(fragmentView.getContext());
+                playTrack();
             }
         });
 
@@ -167,7 +169,7 @@ public class PlayerFragment extends DialogFragment {
 
                     //play track
                     seek = 0;
-                    playTrack(fragmentView.getContext());
+                    playTrack();
                 }
             }
         });
@@ -187,7 +189,7 @@ public class PlayerFragment extends DialogFragment {
 
                     //play track
                     seek = 0;
-                    playTrack(fragmentView.getContext());
+                    playTrack();
                 }
             }
         });
@@ -243,14 +245,13 @@ public class PlayerFragment extends DialogFragment {
         IntentFilter currPositionFilter = new IntentFilter(PlayerService.ACTION_CURR_POSITION);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(currPositionReciever, currPositionFilter);
 
-        // play track when view loads if no track is playing
-        // this feature is per the rubric, though personally not auto-playing is better UX
-//        if (!playing) {
-//            playTrack(fragmentView.getContext());
-//        }
-
         IntentFilter playerCompleteFilter = new IntentFilter(PlayerService.ACTION_COMPLETE);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(playerCompleteReciever, playerCompleteFilter);
+
+        //auto start track
+        if (!playing && !parcelableTrack.previewURL.equals(playingURL)) {
+            playTrack();
+        }
     }
 
     @Override
@@ -292,7 +293,7 @@ public class PlayerFragment extends DialogFragment {
         super.onDestroy();
     }
 
-    public void playTrack(Context context) {
+    public void playTrack() {
         Log.d(LOG, "in playTrack");
 
         // if playing and the current selected track's URL matches the PlayingURL we pause the track
@@ -309,7 +310,7 @@ public class PlayerFragment extends DialogFragment {
             mPlayerViewHolder.playButton.setImageResource(android.R.drawable.ic_media_play);
 
             // store the track's playing position
-            seek = mPlayerViewHolder.seekBar.getProgress();
+//            seek = mPlayerViewHolder.seekBar.getProgress();
         }
 
         // otherwise we start the selected track
@@ -342,6 +343,9 @@ public class PlayerFragment extends DialogFragment {
                 String formattedDuration = new SimpleDateFormat("mm:ss").format(new Date(currPosition));
                 mPlayerViewHolder.trackTimeTextView.setText(formattedDuration);
                 playing = true;
+
+                //update seek position in real time
+                seek = currPosition;
 
             }
         }

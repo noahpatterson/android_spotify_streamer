@@ -101,7 +101,44 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(LOG, "in onStartCommand: " + name);
         // moved normal implementation to the broadcast receivers because it seems easier to manipulate
+        String previewURL = intent.getStringExtra(PlayerFragment.TRACK_PREVIEW_URL);
+        try {
+            mMediaPlayer.setDataSource(previewURL);
+        } catch(IllegalArgumentException e) {
+            Log.e("PlayTrackService start", "malformed url");
+        } catch (IOException e) {
+            Log.e("PlayTrackService start", "track may not exist");
+        }
+
+        mMediaPlayer.prepareAsync(); // prepare async to not block main thread
+        playingURL = previewURL;
+        seek = intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0);
         return 1;
+    }
+
+    private void playTrack(Intent intent, String previewURL) {
+        // play request to start an existing track
+        if (playingURL != null && playingURL.equals(previewURL)) {
+            mMediaPlayer.seekTo(intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0));
+            notifyStart();
+            mMediaPlayer.start();
+        }
+        // otherwise play the newly selected track
+        else
+        {
+            mMediaPlayer.reset();
+            try {
+                mMediaPlayer.setDataSource(previewURL);
+            } catch(IllegalArgumentException e) {
+                Log.e("PlayTrackService start", "malformed url");
+            } catch (IOException e) {
+                Log.e("PlayTrackService start", "track may not exist");
+            }
+
+            mMediaPlayer.prepareAsync(); // prepare async to not block main thread
+            playingURL = previewURL;
+            seek = intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0);
+        }
     }
 
     private BroadcastReceiver playTrackReciever = new BroadcastReceiver() {
@@ -110,28 +147,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             Log.d(LOG, "in playTrackReciever");
             String previewURL = intent.getStringExtra(PlayerFragment.TRACK_PREVIEW_URL);
 
-            // play request to start an existing track
-            if (playingURL != null && playingURL.equals(previewURL)) {
-                mMediaPlayer.seekTo(intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0));
-                notifyStart();
-                mMediaPlayer.start();
-            }
-            // otherwise play the newly selected track
-            else
-            {
-                mMediaPlayer.reset();
-                try {
-                    mMediaPlayer.setDataSource(previewURL);
-                } catch(IllegalArgumentException e) {
-                    Log.e("PlayTrackService start", "malformed url");
-                } catch (IOException e) {
-                    Log.e("PlayTrackService start", "track may not exist");
-                }
-
-                mMediaPlayer.prepareAsync(); // prepare async to not block main thread
-                playingURL = previewURL;
-                seek = intent.getIntExtra(PlayerFragment.SEEK_POSITION, 0);
-            }
+            playTrack(intent, previewURL);
         }
     };
 
@@ -140,8 +156,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(LOG, "in pauseTrackReciever");
-            updaterThread.interrupt();
             mMediaPlayer.pause();
+            updaterThread.interrupt();
         }
     };
 
